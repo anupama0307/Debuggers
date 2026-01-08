@@ -5,8 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(''); // General API errors
-  const [validationErrors, setValidationErrors] = useState({}); // Field-specific errors
+  const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
   const [otp, setOtp] = useState('');
   
   const [formData, setFormData] = useState({
@@ -36,148 +36,178 @@ export default function RegisterPage() {
   const { register, verifyRegisterOTP } = useAuth();
   const navigate = useNavigate();
 
-  // --- VALIDATION LOGIC ---
-
-  const validateStep1 = () => {
-    const errors = {};
-    const nameRegex = /^[a-zA-Z\s]+$/;
+  // --- 1. Centralized Field Validation Logic ---
+  const validateSingleField = (name, value) => {
+    const nameRegex = /^[a-zA-Z\s]*$/; // Allow empty during typing, check strict on submit
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[0-9]{10}$/;
-    const pincodeRegex = /^[0-9]{6}$/;
-
-    // Full Name
-    if (!formData.full_name.trim()) errors.full_name = "Full Name is required";
-    else if (!nameRegex.test(formData.full_name)) errors.full_name = "Name cannot contain numbers or symbols";
-
-    // Email
-    if (!emailRegex.test(formData.email)) errors.email = "Invalid email format";
-
-    // Password
-    if (formData.password.length < 6) errors.password = "Password must be at least 6 characters";
-
-    // Phone
-    if (!phoneRegex.test(formData.phone)) errors.phone = "Phone must be exactly 10 digits";
-
-    // Age Check (18-100)
-    if (!formData.date_of_birth) errors.date_of_birth = "Date of Birth is required";
-    else {
-      const birthDate = new Date(formData.date_of_birth);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-      
-      if (age < 18) errors.date_of_birth = "You must be at least 18 years old";
-      if (age > 100) errors.date_of_birth = "Please enter a valid date";
-    }
-
-    // Address Fields
-    if (!formData.address.trim()) errors.address = "Address is required";
     
-    if (!formData.city.trim()) errors.city = "City is required";
-    else if (!nameRegex.test(formData.city)) errors.city = "City should contain only letters";
+    switch (name) {
+      // Step 1: Personal Info
+      case 'full_name':
+        if (!value) return "Full Name is required";
+        if (!nameRegex.test(value)) return "Name cannot contain numbers or symbols";
+        if (value.length < 3) return "Name must be at least 3 characters";
+        break;
 
-    if (!formData.state.trim()) errors.state = "State is required";
-    else if (!nameRegex.test(formData.state)) errors.state = "State should contain only letters";
+      case 'email':
+        if (!value) return "Email is required";
+        if (!emailRegex.test(value)) return "Invalid email address";
+        break;
 
-    if (!formData.pincode) errors.pincode = "Pincode is required";
-    else if (!pincodeRegex.test(formData.pincode)) errors.pincode = "Invalid Pincode (6 digits)";
+      case 'password':
+        if (!value) return "Password is required";
+        if (value.length < 6) return "Password must be at least 6 characters";
+        break;
 
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+      case 'phone':
+        if (!value) return "Phone number is required";
+        if (value.length !== 10) return "Phone number must be exactly 10 digits";
+        break;
+
+      case 'date_of_birth':
+        if (!value) return "Date of Birth is required";
+        const birthDate = new Date(value);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        if (age < 18) return "You must be at least 18 years old";
+        if (age > 100) return "Please enter a valid year";
+        break;
+
+      case 'address':
+        if (!value.trim()) return "Address is required";
+        break;
+
+      case 'city':
+      case 'state':
+        if (!value.trim()) return "Field is required";
+        if (!nameRegex.test(value)) return "Should contain only letters";
+        break;
+
+      case 'pincode':
+        if (!value) return "Pincode is required";
+        if (value.length !== 6) return "Pincode must be exactly 6 digits";
+        break;
+
+      // Step 2: Employment
+      case 'occupation':
+      case 'employer_name':
+        if (!value.trim()) return "Field is required";
+        if (name === 'occupation' && !nameRegex.test(value)) return "Invalid characters";
+        break;
+
+      case 'employment_years':
+        if (value === '' || value < 0) return "Invalid years";
+        if (value > 60) return "Value too high";
+        break;
+
+      case 'annual_income':
+        if (value < 100000) return "Annual income must be at least ₹100,000";
+        break;
+
+      case 'monthly_expenses':
+        if (value < 0) return "Expenses cannot be negative";
+        const monthlyIncome = formData.annual_income / 12;
+        if (formData.annual_income > 0 && value > monthlyIncome) {
+           return "Expenses exceed your monthly income";
+        }
+        break;
+
+      // Step 3: Financials
+      case 'account_balance':
+        // UPDATED: Added minimum 1 Lakh check
+        if (value < 100000) return "Account balance must be at least ₹1,00,000";
+        break;
+
+      case 'mutual_funds':
+      case 'stocks':
+      case 'fixed_deposits':
+      case 'existing_loans':
+      case 'existing_loan_amount':
+        if (value < 0) return "Value cannot be negative";
+        break;
+
+      default:
+        break;
+    }
+    return ""; // No error
   };
 
-  const validateStep2 = () => {
-    const errors = {};
-    const textOnlyRegex = /^[a-zA-Z\s]+$/;
-
-    // Occupation & Employer
-    if (!formData.occupation.trim()) errors.occupation = "Occupation is required";
-    else if (!textOnlyRegex.test(formData.occupation)) errors.occupation = "Invalid characters in occupation";
-
-    if (!formData.employer_name.trim()) errors.employer_name = "Employer name is required";
-
-    // Years at Job
-    if (formData.employment_years < 0) errors.employment_years = "Years cannot be negative";
-    if (formData.employment_years > 60) errors.employment_years = "Please enter a valid duration";
-
-    // Income & Expenses Logic
-    if (!formData.annual_income || formData.annual_income <= 0) {
-        errors.annual_income = "Valid annual income is required";
-    }
-    
-    if (formData.monthly_expenses < 0) {
-        errors.monthly_expenses = "Expenses cannot be negative";
-    }
-
-    // Logic: Expenses vs Income check
-    const monthlyIncome = formData.annual_income / 12;
-    if (formData.monthly_expenses > monthlyIncome) {
-        errors.monthly_expenses = "Expenses cannot exceed monthly income";
-    }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const validateStep3 = () => {
-    const errors = {};
-    
-    // Financial assets cannot be negative
-    if (formData.account_balance < 0) errors.account_balance = "Cannot be negative";
-    if (formData.mutual_funds < 0) errors.mutual_funds = "Cannot be negative";
-    if (formData.stocks < 0) errors.stocks = "Cannot be negative";
-    if (formData.fixed_deposits < 0) errors.fixed_deposits = "Cannot be negative";
-    
-    // Loan Logic
-    if (formData.existing_loans < 0) errors.existing_loans = "Cannot be negative";
-    
-    // If user has loans, amount must be > 0
-    if (formData.existing_loans > 0 && formData.existing_loan_amount <= 0) {
-        errors.existing_loan_amount = "Please specify amount for existing loans";
-    }
-
-    // If user has no loans, amount should be 0 (auto-correct or warn)
-    if (formData.existing_loans === 0 && formData.existing_loan_amount > 0) {
-        errors.existing_loans = "You have an amount but 0 loans count";
-    }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // --- HANDLERS ---
-
+  // --- 2. Real-Time Change Handler ---
   const handleChange = (e) => {
     const { name, value, type } = e.target;
+    let newValue = value;
+
+    // A. Input Sanitization (Block invalid keystrokes)
     
-    // Clear specific error when user types
-    if (validationErrors[name]) {
-      setValidationErrors(prev => ({ ...prev, [name]: '' }));
+    // For Phone & Pincode: Allow ONLY numbers
+    if (name === 'phone' || name === 'pincode') {
+        if (!/^\d*$/.test(value)) return; // Ignore non-digits completely
     }
 
+    // For numeric inputs: Handle empty strings and parsing
+    if (type === 'number') {
+        newValue = value === '' ? '' : parseFloat(value);
+    }
+
+    // B. Update State
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? (value === '' ? '' : parseFloat(value)) : value
+      [name]: newValue
+    }));
+
+    // C. Immediate Validation
+    // We pass 'newValue' because state update is async and we need to check the CURRENT typing
+    const errorMsg = validateSingleField(name, newValue);
+    
+    setValidationErrors(prev => ({
+      ...prev,
+      [name]: errorMsg
     }));
   };
 
-  const nextStep = () => {
-    let isValid = false;
-    if (step === 1) isValid = validateStep1();
-    if (step === 2) isValid = validateStep2();
+  // --- 3. Step Navigation Validation ---
+  const validateCurrentStep = () => {
+    const errors = {};
+    let fieldsToCheck = [];
     
-    if (isValid) setStep(prev => prev + 1);
+    if (step === 1) fieldsToCheck = ['full_name', 'email', 'password', 'phone', 'date_of_birth', 'address', 'city', 'state', 'pincode'];
+    if (step === 2) fieldsToCheck = ['occupation', 'employer_name', 'employment_years', 'annual_income', 'monthly_expenses'];
+    if (step === 3) fieldsToCheck = ['account_balance', 'mutual_funds', 'stocks', 'fixed_deposits', 'existing_loans'];
+
+    let isValid = true;
+    fieldsToCheck.forEach(field => {
+       const error = validateSingleField(field, formData[field]);
+       if (error) {
+           errors[field] = error;
+           isValid = false;
+       }
+       // Catch empty fields that user might not have touched yet
+       if (!formData[field] && typeof formData[field] === 'string' && field !== 'address') { 
+          errors[field] = "This field is required"; 
+          isValid = false;
+       }
+    });
+
+    setValidationErrors(errors);
+    return isValid;
+  };
+
+  const nextStep = () => {
+    if (validateCurrentStep()) setStep(prev => prev + 1);
   };
 
   const prevStep = () => {
-    setValidationErrors({}); // Clear errors when going back
+    setValidationErrors({});
     setStep(prev => prev - 1);
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!validateStep3()) return; // Validate final step
+    if (!validateCurrentStep()) return;
 
     setLoading(true);
     setError('');
@@ -196,7 +226,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
     try {
       await verifyRegisterOTP(formData.email, otp);
       navigate('/dashboard');
@@ -207,7 +236,7 @@ export default function RegisterPage() {
     }
   };
 
-  // Helper for conditional styling
+  // Helper for red border styling
   const getInputClass = (fieldName) => {
     return `w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors ${
       validationErrors[fieldName] 
@@ -238,7 +267,6 @@ export default function RegisterPage() {
           ))}
         </div>
 
-        {/* Global Error Message */}
         {error && (
           <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm border border-red-200 text-center font-medium">
             {error}
@@ -260,7 +288,7 @@ export default function RegisterPage() {
                   className={getInputClass('full_name')}
                   placeholder="John Doe"
                 />
-                {validationErrors.full_name && <p className="text-red-500 text-xs mt-1">{validationErrors.full_name}</p>}
+                {validationErrors.full_name && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.full_name}</p>}
               </div>
 
               <div>
@@ -273,7 +301,7 @@ export default function RegisterPage() {
                   className={getInputClass('email')}
                   placeholder="john@example.com"
                 />
-                {validationErrors.email && <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>}
+                {validationErrors.email && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.email}</p>}
               </div>
 
               <div>
@@ -286,7 +314,7 @@ export default function RegisterPage() {
                   className={getInputClass('password')}
                   placeholder="••••••••"
                 />
-                {validationErrors.password && <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>}
+                {validationErrors.password && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.password}</p>}
               </div>
 
               <div>
@@ -298,9 +326,9 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   className={getInputClass('phone')}
                   placeholder="9876543210"
-                  maxLength="10"
+                  maxLength="10" 
                 />
-                {validationErrors.phone && <p className="text-red-500 text-xs mt-1">{validationErrors.phone}</p>}
+                {validationErrors.phone && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.phone}</p>}
               </div>
 
               <div>
@@ -312,7 +340,7 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   className={getInputClass('date_of_birth')}
                 />
-                {validationErrors.date_of_birth && <p className="text-red-500 text-xs mt-1">{validationErrors.date_of_birth}</p>}
+                {validationErrors.date_of_birth && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.date_of_birth}</p>}
               </div>
 
               <div>
@@ -339,7 +367,7 @@ export default function RegisterPage() {
                   className={getInputClass('address')}
                   placeholder="Flat No, Street Name"
                 />
-                {validationErrors.address && <p className="text-red-500 text-xs mt-1">{validationErrors.address}</p>}
+                {validationErrors.address && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.address}</p>}
               </div>
 
               <div>
@@ -351,7 +379,7 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   className={getInputClass('city')}
                 />
-                {validationErrors.city && <p className="text-red-500 text-xs mt-1">{validationErrors.city}</p>}
+                {validationErrors.city && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.city}</p>}
               </div>
 
               <div>
@@ -363,7 +391,7 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   className={getInputClass('state')}
                 />
-                {validationErrors.state && <p className="text-red-500 text-xs mt-1">{validationErrors.state}</p>}
+                {validationErrors.state && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.state}</p>}
               </div>
 
               <div>
@@ -377,7 +405,7 @@ export default function RegisterPage() {
                   maxLength="6"
                   placeholder="123456"
                 />
-                {validationErrors.pincode && <p className="text-red-500 text-xs mt-1">{validationErrors.pincode}</p>}
+                {validationErrors.pincode && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.pincode}</p>}
               </div>
             </div>
 
@@ -405,7 +433,7 @@ export default function RegisterPage() {
                   className={getInputClass('occupation')}
                   placeholder="Software Engineer"
                 />
-                {validationErrors.occupation && <p className="text-red-500 text-xs mt-1">{validationErrors.occupation}</p>}
+                {validationErrors.occupation && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.occupation}</p>}
               </div>
 
               <div>
@@ -418,7 +446,7 @@ export default function RegisterPage() {
                   className={getInputClass('employer_name')}
                   placeholder="Company Name"
                 />
-                {validationErrors.employer_name && <p className="text-red-500 text-xs mt-1">{validationErrors.employer_name}</p>}
+                {validationErrors.employer_name && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.employer_name}</p>}
               </div>
 
               <div>
@@ -431,7 +459,7 @@ export default function RegisterPage() {
                   className={getInputClass('employment_years')}
                   min="0"
                 />
-                {validationErrors.employment_years && <p className="text-red-500 text-xs mt-1">{validationErrors.employment_years}</p>}
+                {validationErrors.employment_years && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.employment_years}</p>}
               </div>
 
               <div>
@@ -442,9 +470,9 @@ export default function RegisterPage() {
                   value={formData.annual_income}
                   onChange={handleChange}
                   className={getInputClass('annual_income')}
-                  min="0"
+                  min="100000"
                 />
-                {validationErrors.annual_income && <p className="text-red-500 text-xs mt-1">{validationErrors.annual_income}</p>}
+                {validationErrors.annual_income && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.annual_income}</p>}
               </div>
 
               <div>
@@ -457,7 +485,7 @@ export default function RegisterPage() {
                   className={getInputClass('monthly_expenses')}
                   min="0"
                 />
-                {validationErrors.monthly_expenses && <p className="text-red-500 text-xs mt-1">{validationErrors.monthly_expenses}</p>}
+                {validationErrors.monthly_expenses && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.monthly_expenses}</p>}
               </div>
             </div>
 
@@ -485,9 +513,9 @@ export default function RegisterPage() {
                   value={formData.account_balance}
                   onChange={handleChange}
                   className={getInputClass('account_balance')}
-                  min="0"
+                  min="100000" // VISUAL PROMPT
                 />
-                {validationErrors.account_balance && <p className="text-red-500 text-xs mt-1">{validationErrors.account_balance}</p>}
+                {validationErrors.account_balance && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.account_balance}</p>}
               </div>
 
               <div>
@@ -500,7 +528,7 @@ export default function RegisterPage() {
                   className={getInputClass('mutual_funds')}
                   min="0"
                 />
-                {validationErrors.mutual_funds && <p className="text-red-500 text-xs mt-1">{validationErrors.mutual_funds}</p>}
+                {validationErrors.mutual_funds && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.mutual_funds}</p>}
               </div>
 
               <div>
@@ -513,7 +541,7 @@ export default function RegisterPage() {
                   className={getInputClass('stocks')}
                   min="0"
                 />
-                 {validationErrors.stocks && <p className="text-red-500 text-xs mt-1">{validationErrors.stocks}</p>}
+                 {validationErrors.stocks && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.stocks}</p>}
               </div>
 
               <div>
@@ -526,7 +554,7 @@ export default function RegisterPage() {
                   className={getInputClass('fixed_deposits')}
                   min="0"
                 />
-                 {validationErrors.fixed_deposits && <p className="text-red-500 text-xs mt-1">{validationErrors.fixed_deposits}</p>}
+                 {validationErrors.fixed_deposits && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.fixed_deposits}</p>}
               </div>
 
               <div>
@@ -539,7 +567,7 @@ export default function RegisterPage() {
                   className={getInputClass('existing_loans')}
                   min="0"
                 />
-                 {validationErrors.existing_loans && <p className="text-red-500 text-xs mt-1">{validationErrors.existing_loans}</p>}
+                 {validationErrors.existing_loans && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.existing_loans}</p>}
               </div>
 
               <div>
@@ -552,7 +580,7 @@ export default function RegisterPage() {
                   className={getInputClass('existing_loan_amount')}
                   min="0"
                 />
-                 {validationErrors.existing_loan_amount && <p className="text-red-500 text-xs mt-1">{validationErrors.existing_loan_amount}</p>}
+                 {validationErrors.existing_loan_amount && <p className="text-red-500 text-xs mt-1 animate-pulse">{validationErrors.existing_loan_amount}</p>}
               </div>
             </div>
 
@@ -592,9 +620,6 @@ export default function RegisterPage() {
                 maxLength={6}
                 required
               />
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                * Check your backend console for the OTP
-              </p>
             </div>
 
             <button
