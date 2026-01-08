@@ -169,3 +169,155 @@ async def analyze_spending_patterns(transactions: list) -> dict:
 
     except Exception as e:
         return {"analysis": f"Error analyzing patterns: {str(e)}", "categories": {}}
+
+
+async def generate_rejection_reason(reasons: list) -> str:
+    """
+    Generate a polite, human-readable rejection explanation using Gemini AI.
+
+    Args:
+        reasons: List of risk factors that led to rejection
+
+    Returns:
+        A polite, helpful rejection message
+    """
+    if not gemini_model:
+        return f"Unfortunately, your loan application could not be approved at this time. Factors considered: {', '.join(reasons)}. Please contact support for more information."
+
+    try:
+        reasons_text = "\n".join(f"- {r}" for r in reasons)
+        prompt = f"""Generate a polite, empathetic loan rejection message for a customer.
+
+        Rejection Reasons:
+        {reasons_text}
+
+        Requirements:
+        - Be respectful and professional
+        - Do not blame the customer
+        - Keep it under 3 sentences
+        - Suggest they can reapply after improving their financial situation
+        - Do not include any specific numbers or technical jargon"""
+
+        response = gemini_model.generate_content(prompt)
+        return response.text.strip()
+
+    except Exception as e:
+        return f"Unfortunately, your loan application could not be approved at this time. We encourage you to review your financial profile and apply again in the future."
+
+
+async def generate_approval_message(amount: float, emi: float, tenure_months: int) -> str:
+    """
+    Generate a congratulatory approval message using Gemini AI.
+
+    Args:
+        amount: Approved loan amount
+        emi: Monthly EMI amount
+        tenure_months: Loan tenure
+
+    Returns:
+        A congratulatory approval message
+    """
+    if not gemini_model:
+        return f"Congratulations! Your loan of ₹{amount:,.2f} has been approved. Your monthly EMI will be ₹{emi:,.2f} for {tenure_months} months."
+
+    try:
+        prompt = f"""Generate a brief, congratulatory loan approval message.
+
+        Loan Details:
+        - Amount: ₹{amount:,.2f}
+        - Monthly EMI: ₹{emi:,.2f}
+        - Tenure: {tenure_months} months
+
+        Requirements:
+        - Be enthusiastic and professional
+        - Keep it under 2 sentences
+        - Mention the key numbers"""
+
+        response = gemini_model.generate_content(prompt)
+        return response.text.strip()
+
+    except Exception as e:
+        return f"Congratulations! Your loan of ₹{amount:,.2f} has been approved. Your monthly EMI will be ₹{emi:,.2f} for {tenure_months} months."
+
+
+async def generate_bank_chat_response(
+    user_name: str,
+    loan_details: dict,
+    user_query: str
+) -> dict:
+    """
+    Generate an intelligent chat response as an AI Bank Manager using Gemini.
+
+    Args:
+        user_name: The user's full name
+        loan_details: Dictionary with loan information (status, amount, emi, risk_score, etc.)
+        user_query: The user's question/query
+
+    Returns:
+        Dictionary with 'response' and optional 'suggested_action'
+    """
+    if not gemini_model:
+        return {
+            "response": f"Hello {user_name}, I'm currently unable to process your request. Please try again later or contact our support team.",
+            "suggested_action": "Contact customer support"
+        }
+
+    try:
+        # Build context from loan details
+        loan_status = loan_details.get("status", "No active application")
+        amount = loan_details.get("amount", 0)
+        emi = loan_details.get("emi", 0)
+        risk_score = loan_details.get("risk_score", 0)
+        
+        context = f"""
+Customer Name: {user_name}
+Loan Status: {loan_status}
+Loan Amount: ₹{amount:,.2f}
+Monthly EMI: ₹{emi:,.2f}
+Risk Score: {risk_score}/100
+"""
+
+        system_prompt = f"""You are a friendly and professional Bank Manager AI assistant for RISKOFF, a fintech company.
+You have access to the customer's loan information.
+
+CUSTOMER CONTEXT:
+{context}
+
+GUIDELINES:
+- Be helpful, empathetic, and professional
+- Answer questions based on the customer's actual loan data
+- If the customer has no active loan, suggest they apply for one
+- Keep responses concise (2-4 sentences)
+- If asked about something you don't know, politely redirect to customer support
+- Never reveal internal risk scores directly, use terms like "your profile looks strong" or "there are some concerns"
+- Suggest logical next steps when appropriate
+
+USER QUERY: {user_query}
+
+Respond in a conversational manner. If there's a clear next action the user should take, mention it briefly."""
+
+        response = gemini_model.generate_content(system_prompt)
+        response_text = response.text.strip()
+        
+        # Determine if there's a suggested action based on context
+        suggested_action = None
+        if loan_status == "No active application":
+            suggested_action = "Apply for a loan"
+        elif loan_status == "PENDING":
+            suggested_action = "Wait for approval notification"
+        elif loan_status == "APPROVED":
+            suggested_action = "Complete loan documentation"
+        elif loan_status == "REJECTED":
+            suggested_action = "Review rejection reasons and reapply"
+        
+        return {
+            "response": response_text,
+            "suggested_action": suggested_action
+        }
+
+    except Exception as e:
+        return {
+            "response": f"Hello {user_name}, I apologize but I'm having trouble processing your request right now. Please try again in a moment.",
+            "suggested_action": "Try again or contact support"
+        }
+
