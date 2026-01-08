@@ -11,6 +11,7 @@ const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'
 export default function UserDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasFinancialData, setHasFinancialData] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
@@ -18,10 +19,12 @@ export default function UserDashboard() {
 
   const fetchDashboard = async () => {
     try {
-      const response = await api. get('/user/dashboard');
-      setData(response. data);
+      const response = await api.get('/user/dashboard');
+      setData(response.data);
+      setHasFinancialData(response.data?.has_financial_data || false);
     } catch (error) {
       console.error('Error fetching dashboard:', error);
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -56,13 +59,13 @@ export default function UserDashboard() {
     );
   }
 
-  const spendingData = data?.spending_breakdown?. map((item, index) => ({
-    name:  item.category,
+  const spendingData = data?.spending_breakdown?.map((item, index) => ({
+    name: item.category,
     value: item.amount,
-    color:  COLORS[index % COLORS.length]
+    color: COLORS[index % COLORS.length]
   })) || [];
 
-  const incomeExpenseData = data?. income_vs_expense || [];
+  const incomeExpenseData = data?.income_vs_expense || [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -70,6 +73,20 @@ export default function UserDashboard() {
       <div className="flex">
         <Sidebar />
         <main className="flex-1 p-8">
+          {/* Welcome Banner for new users */}
+          {!hasFinancialData && (
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 mb-6 text-white">
+              <h2 className="text-xl font-bold mb-2">👋 Welcome to VisualPe!</h2>
+              <p className="text-blue-100 mb-4">Get started by applying for your first loan. Your financial data will be displayed here once you submit a loan application.</p>
+              <Link
+                to="/apply-loan"
+                className="inline-block bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-blue-50"
+              >
+                Apply for Your First Loan →
+              </Link>
+            </div>
+          )}
+
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-gray-800">📊 VisualPe Dashboard</h1>
             <Link
@@ -99,10 +116,10 @@ export default function UserDashboard() {
                 <div
                   className={`h-full ${
                     data?.customer_score >= 750 ? 'bg-green-500' : 
-                    data?. customer_score >= 650 ? 'bg-blue-500' :
-                    data?.customer_score >= 550 ? 'bg-yellow-500' :  'bg-red-500'
+                    data?.customer_score >= 650 ? 'bg-blue-500' :
+                    data?.customer_score >= 550 ? 'bg-yellow-500' : 'bg-red-500'
                   }`}
-                  style={{ width: `${(data?.customer_score / 900) * 100}%` }}
+                  style={{ width: `${((data?.customer_score || 0) / 900) * 100}%` }}
                 />
               </div>
             </div>
