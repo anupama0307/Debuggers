@@ -1,115 +1,111 @@
-from fastapi import FastAPI
+"""
+RISKOFF API - FastAPI Entry Point
+A Fintech application for risk assessment and loan management.
+With rate limiting and security middleware.
+"""
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
-# Import settings and database initialization
-from app.config import settings
-from app.database.database import init_db, SessionLocal
+from app.config import supabase_client
+from app.routers import auth, loans, upload, admin, zudu
 
-# Import models
-from app.models.user import User
-from app.models.loan import LoanApplication
-from app.models.grievance import Grievance
-from app.models.transaction import Transaction
-
-# Import utility functions
-from app.utils.security import hash_password
-
-# Import routes
-from app.routes import auth, admin, user, loan, grievance, bank_statement
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 # Initialize FastAPI application
 app = FastAPI(
-    title="RISKON + VisualPe API",
-    description="AI-Powered Smart Lending Platform",
-    version="2.0.0",
+    title="RISKOFF API",
+    description="A Fintech API for risk assessment and loan management",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
-# Add CORS middleware
+# Attach limiter to app state
+app.state.limiter = limiter
+
+# Add rate limit exceeded exception handler
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Configure CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # Ensure frontend URL matches
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Add routes
+# Include all routers
 app.include_router(auth.router)
+app.include_router(loans.router)
+app.include_router(upload.router)
 app.include_router(admin.router)
-app.include_router(user.router)  # Fixed spacing issue
-app.include_router(loan.router)
-app.include_router(grievance.router)
-app.include_router(bank_statement.router)  # Fixed spacing issue
+app.include_router(zudu.router)
 
-@app.on_event("startup")
-def startup():
-    print("\n" + "=" * 50)
-    print("Starting RISKON + VisualPe API...")
-    print("=" * 50)
-    
-    # Initialize database connections
-    init_db()
 
-    # Database session
-    db = SessionLocal()
+@app.get("/", tags=["Root"])
+@limiter.limit("60/minute")
+async def root(request: Request):
+    """Root endpoint to check if the API is active."""
+    return {
+        "status": "active",
+        "service": "RISKOFF API",
+        "version": "1.0.0"
+    }
+
+
+@app.get("/health", tags=["Health"])
+@limiter.limit("60/minute")
+async def health_check(request: Request):
+    """
+    Health check endpoint to verify API and Supabase connection status.
+    """
+    health_status = {
+        "api_status": "healthy",
+        "supabase_status": "unknown"
+    }
+
+    if supabase_client is None:
+        health_status["supabase_status"] = "not_configured"
+        health_status["message"] = "Supabase client not initialized. Check environment variables."
+        return health_status
+
     try:
-        # Create admin user if not present
-        admin = db.query(User).filter(User.email == settings.ADMIN_EMAIL).first()
-        if not admin:
-            admin = User(
-                email=settings.ADMIN_EMAIL,
-                password_hash=hash_password(settings.ADMIN_PASSWORD),  # Hash admin password
-                full_name="System Admin",
-                phone="0000000000",
-                role="admin",
-                is_verified=True,
-                is_active=True,
-                customer_score=900
-            )
-            db.add(admin)
-            db.commit()  # Commit changes
-            print("Admin created: " + settings.ADMIN_EMAIL)
-        
-        # Create demo user if not present
-        demo_user = db.query(User).filter(User.email == "user@test.com").first()
-        if not demo_user:
-            demo_user = User(
-                email="user@test.com",
-                password_hash=hash_password("user123"),  # Hash demo user password
-                full_name="Demo User",
-                phone="9876543210",
-                occupation="Software Engineer",
-                employer_name="Tech Corp",
-                employment_years=4,
-                annual_income=800000,
-                monthly_expenses=35000,
-                account_balance=250000,
-                mutual_funds=150000,
-                stocks=50000,
-                fixed_deposits=200000,
-                existing_loans=1,
-                existing_loan_amount=100000,
-                role="user",
-                is_verified=True,
-                is_active=True,
-                customer_score=720
-            )
-            db.add(demo_user)
-            db.commit()  # Commit changes
-            print("Demo user created: user@test.com")
-    finally:
-        db.close()  # Ensure database session is closed
+        # Verify Supabase connection
+        response = supabase_client.auth.get_session()
+        health_status["supabase_status"] = "connected"
+        health_status["message"] = "All systems operational"
+    except Exception as e:
+        health_status["supabase_status"] = "error"
+        health_status["message"] = f"Supabase connection error: {str(e)}"
+
+    return health_status
+
+
+# Global rate limit middleware for all endpoints
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """
+    Global middleware that applies to all requests.
+    Adds security headers to responses.
+    """
+    response = await call_next(request)
     
-    print("\nAPI Ready!")
-    print("Docs: http://localhost:8000/docs")
-    print("=" * 50 + "\n")
+    # Add security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    
+    return response
 
-# Root endpoint
-@app.get("/")
-def root():
-    return {"app": "RISKON + VisualPe", "version": "2.0.0", "status": "running"}
 
-# Health check endpoint
-@app.get("/health")
-def health():
-    return {"status": "healthy"}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
