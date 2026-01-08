@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, status, Depends
 from typing import Optional
 from app.config import supabase_client
 from app.schemas import ReceiptData
-from app.services.parser import parse_bank_statement_csv, analyze_receipt_image
+from app.services.parser import parse_bank_statement_csv, analyze_receipt_image, transcribe_audio
 from app.utils.security import get_current_user, CurrentUser, get_current_user_optional
 
 router = APIRouter(
@@ -258,4 +258,77 @@ async def save_receipt_transaction(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error saving transaction: {str(e)}"
+        )
+
+
+@router.post("/audio/transcribe")
+async def transcribe_audio_file(
+    file: UploadFile = File(...),
+    current_user: CurrentUser = Depends(get_current_user)
+):
+    """
+    Transcribe an audio file to text using Gemini AI.
+    
+    Supports voice notes that can be fed into the AI Agent.
+    Useful for queries like "I need a loan for 5 lakhs".
+    
+    Requires authentication.
+    """
+    # Allowed audio MIME types
+    allowed_types = [
+        "audio/mpeg",
+        "audio/mp3",
+        "audio/wav",
+        "audio/wave",
+        "audio/x-wav",
+        "audio/x-m4a",
+        "audio/m4a",
+        "audio/mp4",
+        "audio/ogg",
+        "audio/webm"
+    ]
+    
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file type '{file.content_type}'. Allowed: MP3, WAV, M4A, OGG, WebM"
+        )
+    
+    # Validate file size (max 25MB for audio)
+    file_content = await file.read()
+    max_size = 25 * 1024 * 1024  # 25MB
+    
+    if len(file_content) > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size exceeds 25MB limit"
+        )
+    
+    if len(file_content) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The uploaded file is empty"
+        )
+    
+    try:
+        # Transcribe audio using Gemini
+        transcription = await transcribe_audio(file_content, file.content_type)
+        
+        return {
+            "status": "success",
+            "transcription": transcription,
+            "file_name": file.filename,
+            "file_size_bytes": len(file_content),
+            "user_id": current_user.id
+        }
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error transcribing audio: {str(e)}"
         )
