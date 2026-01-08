@@ -51,19 +51,15 @@ export default function ApplyLoanPage() {
       const response = await api.post("/loans/apply", payload);
       setResult(response.data);
     } catch (err) {
-      console.error("Error applying for loan:", err);
-      // Handle Pydantic validation errors (which return detail as array)
+      console.error('Error applying for loan:', err);
       const detail = err.response?.data?.detail;
+      // Handle FastAPI validation errors (array of objects) or string errors
       if (Array.isArray(detail)) {
-        // Extract first error message from validation array
-        const firstError = detail[0];
-        setError(firstError?.msg || firstError?.message || "Validation error");
-      } else if (typeof detail === "string") {
-        setError(detail);
-      } else if (typeof detail === "object" && detail?.message) {
-        setError(detail.message);
+        setError(detail.map(e => e.msg || JSON.stringify(e)).join(', '));
+      } else if (typeof detail === 'object' && detail !== null) {
+        setError(detail.msg || JSON.stringify(detail));
       } else {
-        setError(err.response?.data?.message || "Error submitting application");
+        setError(detail || 'Error submitting application');
       }
     } finally {
       setLoading(false);
@@ -128,19 +124,13 @@ export default function ApplyLoanPage() {
 
                 <div className="grid grid-cols-2 gap-4 text-left mt-6 mb-6">
                   <div className="bg-white dark:bg-slate-800 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Risk Score
-                    </p>
-                    <p className="text-xl font-bold dark:text-white">
-                      {result.risk_score || "N/A"}%
-                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Risk Score</p>
+                    <p className="text-xl font-bold dark:text-white">{Math.round(result.risk_score || 0)}%</p>
                   </div>
                   <div className="bg-white dark:bg-slate-800 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Risk Category
-                    </p>
-                    <p className="text-xl font-bold dark:text-white">
-                      {result.risk_category || "N/A"}
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Max Approved Amount</p>
+                    <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                      {result.max_approved_amount ? `₹${result.max_approved_amount.toLocaleString('en-IN')}` : 'N/A'}
                     </p>
                   </div>
                   <div className="bg-white dark:bg-slate-800 p-4 rounded-lg">
@@ -148,25 +138,21 @@ export default function ApplyLoanPage() {
                       Monthly EMI
                     </p>
                     <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                      ₹
-                      {(result.monthly_emi || result.emi || 0).toLocaleString(
-                        "en-IN"
-                      )}
+                      ₹{Math.round(result.emi || 0).toLocaleString('en-IN')}
                     </p>
                   </div>
                   <div className="bg-white dark:bg-slate-800 p-4 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Decision
-                    </p>
-                    <p className="text-xl font-bold dark:text-white">
-                      {result.auto_decision ? "Auto" : "Manual Review"}
-                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Application ID</p>
+                    <p className="text-xl font-bold dark:text-white">#{result.id}</p>
                   </div>
                 </div>
 
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
-                  {result.recommendation}
-                </p>
+                {result.ai_explanation && (
+                  <div className="bg-white dark:bg-slate-800 p-4 rounded-lg text-left mb-6">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">AI Explanation</p>
+                    <p className="text-gray-700 dark:text-gray-300">{result.ai_explanation}</p>
+                  </div>
+                )}
 
                 <div className="flex gap-4 justify-center">
                   <button

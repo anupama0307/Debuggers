@@ -15,12 +15,13 @@ export default function MyLoansPage() {
 
   const fetchLoans = async () => {
     try {
-      const response = await api.get("/loans/my-loans");
-      // Backend returns { loans: [...], total: N } - extract the array
-      setLoans(response.data.loans || response.data || []);
+      const response = await api.get('/loans/my-loans');
+      // Backend returns { loans: [...] } object
+      const loansData = response.data?.loans || response.data || [];
+      setLoans(Array.isArray(loansData) ? loansData : []);
     } catch (error) {
-      console.error("Error fetching loans:", error);
-      setLoans([]); // Ensure loans is always an array
+      console.error('Error fetching loans:', error);
+      setLoans([]);
     } finally {
       setLoading(false);
     }
@@ -55,18 +56,16 @@ export default function MyLoansPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
       <Navbar />
       <div className="flex">
         <Sidebar />
         <main className="flex-1 p-8">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">
-              📋 My Loan Applications
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">📋 My Loan Applications</h1>
             <Link
               to="/apply-loan"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover: bg-blue-700"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700"
             >
               + New Application
             </Link>
@@ -75,14 +74,10 @@ export default function MyLoansPage() {
           {loading ? (
             <LoadingSpinner text="Loading loans..." />
           ) : loans.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-12 text-center">
               <div className="text-6xl mb-4">📭</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                No Loan Applications
-              </h3>
-              <p className="text-gray-500 mb-6">
-                You haven't applied for any loans yet.
-              </p>
+              <h3 className="text-xl font-semibold text-gray-700 dark:text-white mb-2">No Loan Applications</h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-6">You haven't applied for any loans yet.</p>
               <Link
                 to="/apply-loan"
                 className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700"
@@ -93,96 +88,62 @@ export default function MyLoansPage() {
           ) : (
             <div className="space-y-4">
               {loans.map((loan) => (
-                <div
-                  key={loan.id}
-                  className="bg-white rounded-xl shadow-sm p-6"
-                >
+                <div key={loan.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
                   <div className="flex justify-between items-start">
                     <div className="flex items-start gap-4">
-                      <div className="text-4xl">
-                        {getStatusIcon(loan.status)}
-                      </div>
+                      <div className="text-4xl">{getStatusIcon(loan.status?.toLowerCase())}</div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-800 capitalize">
-                          {loan.purpose || "Personal"} Loan
+                        <h3 className="text-lg font-semibold text-gray-800 dark:text-white capitalize">
+                          {loan.purpose || loan.loan_type || 'Loan'} Application
                         </h3>
-                        <p className="text-sm text-gray-500">ID: #{loan.id}</p>
-                        <p className="text-sm text-gray-500">
-                          Applied:{" "}
-                          {loan.created_at
-                            ? new Date(loan.created_at).toLocaleDateString()
-                            : "N/A"}
-                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Amount: ₹{(loan.amount || loan.loan_amount)?.toLocaleString('en-IN')}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Applied: {new Date(loan.created_at || loan.applied_at).toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(
-                        loan.status
-                      )}`}
-                    >
-                      {loan.status.toUpperCase()}
-                      {loan.auto_decision && " (Auto)"}
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(loan.status?.toLowerCase())}`}>
+                      {(loan.status || 'pending').toUpperCase()}
+                      {loan.auto_decision && ' (Auto)'}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                     <div>
-                      <p className="text-sm text-gray-500">Amount</p>
-                      <p className="font-semibold">
-                        ₹{(loan.amount || 0).toLocaleString("en-IN")}
-                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Amount</p>
+                      <p className="font-semibold dark:text-white">₹{(loan.amount || loan.loan_amount)?.toLocaleString('en-IN')}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Tenure</p>
-                      <p className="font-semibold">
-                        {loan.tenure_months || 0} months
-                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Tenure</p>
+                      <p className="font-semibold dark:text-white">{loan.tenure_months || loan.loan_tenure_months} months</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">EMI</p>
-                      <p className="font-semibold text-blue-600">
-                        ₹{(loan.emi || 0).toLocaleString("en-IN")}
-                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">EMI</p>
+                      <p className="font-semibold text-blue-600">₹{loan.emi?.toLocaleString('en-IN') || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">Risk Score</p>
-                      <p
-                        className={`font-semibold ${
-                          (loan.risk_score || 0) <= 30
-                            ? "text-green-600"
-                            : (loan.risk_score || 0) <= 50
-                            ? "text-yellow-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {loan.risk_score || 0}%
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                      <p className={`font-semibold ${
+                        loan.status?.toLowerCase() === 'approved' ? 'text-green-600' : 
+                        loan.status?.toLowerCase() === 'rejected' ? 'text-red-600' : 'text-yellow-600'
+                      }`}>
+                        {(loan.status || 'pending').toUpperCase()}
                       </p>
                     </div>
                   </div>
 
-                  {loan.status === "APPROVED" && (
-                    <div className="mt-4 p-3 bg-green-50 rounded-lg">
-                      <p className="text-sm text-green-700">
-                        ✅ Approved Amount:{" "}
-                        <strong>
-                          ₹{(loan.amount || 0).toLocaleString("en-IN")}
-                        </strong>
-                        {loan.interest_rate &&
-                          ` @ ${loan.interest_rate}% interest`}
+                  {loan.status?.toLowerCase() === 'approved' && (
+                    <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                      <p className="text-sm text-green-700 dark:text-green-400">
+                        ✅ Approved Amount: <strong>₹{loan.max_approved_amount?.toLocaleString('en-IN') || (loan.amount || loan.loan_amount)?.toLocaleString('en-IN')}</strong>
                       </p>
                     </div>
                   )}
 
-                  {loan.status === "REJECTED" && (
+                  {loan.status?.toLowerCase() === 'rejected' && (
                     <div className="mt-4">
                       {loan.ai_explanation ? (
-                        <div className="p-3 bg-red-50 rounded-lg">
-                          <p className="text-sm font-medium text-red-700">
-                            Rejection Reason:
-                          </p>
-                          <p className="text-sm text-red-600 whitespace-pre-wrap">
-                            {loan.ai_explanation}
-                          </p>
+                        <div className="p-3 bg-red-50 dark:bg-red-900/30 rounded-lg">
+                          <p className="text-sm font-medium text-red-700 dark:text-red-400">Reason:</p>
+                          <p className="text-sm text-red-600 dark:text-red-300 whitespace-pre-wrap">{loan.ai_explanation}</p>
                         </div>
                       ) : (
                         <button
