@@ -1,15 +1,42 @@
-from pydantic_settings import BaseSettings
+"""
+Configuration module for RISKOFF API.
+Initializes Supabase client and Gemini AI model.
+"""
 
-class Settings(BaseSettings):
-    SECRET_KEY: str = "super-secret-key-change-in-production"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-    DATABASE_URL:  str = "sqlite:///./riskon. db"
-    ADMIN_EMAIL: str = "admin@riskon.com"
-    ADMIN_PASSWORD: str = "admin123"
-    
-    class Config: 
-        env_file = ".env"
+import os
+from dotenv import load_dotenv
 
-settings = Settings()
-assert len(settings.ADMIN_PASSWORD) <= 72, "Admin password must be ≤72 characters"
+# Load environment variables from .env file
+load_dotenv()
+
+# Environment variables
+SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
+GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+
+# Initialize Supabase client
+supabase_client = None
+try:
+    if SUPABASE_URL and SUPABASE_KEY:
+        from supabase import create_client, Client
+        supabase_client: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("✅ Supabase client initialized successfully.")
+    else:
+        print("⚠️ Warning: SUPABASE_URL or SUPABASE_KEY not found.")
+        print("   Supabase features will be unavailable.")
+except Exception as e:
+    print(f"❌ Error initializing Supabase client: {e}")
+
+# Initialize Gemini AI model
+gemini_model = None
+try:
+    if GEMINI_API_KEY:
+        import google.generativeai as genai
+        genai.configure(api_key=GEMINI_API_KEY)
+        gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+        print("✅ Gemini AI model initialized successfully.")
+    else:
+        print("⚠️ Warning: GEMINI_API_KEY not found.")
+        print("   Gemini AI features will be unavailable.")
+except Exception as e:
+    print(f"❌ Error initializing Gemini AI model: {e}")
