@@ -184,3 +184,71 @@ async def get_loan_by_id(loan_id: str):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+
+
+@router.get("/{loan_id}/explanation")
+async def get_loan_explanation(
+    loan_id: int,
+    current_user: CurrentUser = Depends(get_current_user)
+):
+    """
+    Get AI-generated explanation for a loan decision.
+    
+    Requires authentication. User can only access their own loans.
+    """
+    if not supabase_client:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Supabase client not initialized"
+        )
+
+    try:
+        # Fetch the loan
+        response = supabase_client.table("loans").select("*").eq("id", loan_id).execute()
+        
+        if not response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Loan not found"
+            )
+        
+        loan = response.data[0]
+        
+        # Security check: verify loan belongs to current user
+        if loan.get("user_id") != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to access this loan"
+            )
+        
+        # Check if already has explanation
+        if loan.get("ai_explanation"):
+            return {"explanation": loan.get("ai_explanation")}
+        
+        # Generate new explanation using LLM
+        from app.services.llm import generate_risk_explanation
+        
+        explanation = await generate_risk_explanation(
+            score=loan.get("risk_score", 0),
+            status=loan.get("status", "REJECTED"),
+            reasons=loan.get("risk_reason", "").split(", ") if loan.get("risk_reason") else []
+        )
+        
+        # Optionally save the explanation back to the loan
+        try:
+            supabase_client.table("loans").update({
+                "ai_explanation": explanation
+            }).eq("id", loan_id).execute()
+        except:
+            pass  # Non-critical if save fails
+        
+        return {"explanation": explanation}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating explanation: {str(e)}"
+        )
+
