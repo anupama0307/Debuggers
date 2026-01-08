@@ -20,12 +20,20 @@ export default function LoanApplicationsPage() {
     try {
       setError('');
       const response = await api.get('/admin/loans');
+      console.log('Admin loans response:', response.data);
       // Backend returns { loans: [...] } object
       const loansData = response.data?.loans || response.data || [];
       setLoans(Array.isArray(loansData) ? loansData : []);
     } catch (error) {
       console.error('Error fetching loans:', error);
-      setError('Failed to load loans');
+      const detail = error.response?.data?.detail || error.response?.data?.message;
+      if (error.response?.status === 403) {
+        setError('Access denied. Admin privileges required.');
+      } else if (error.response?.status === 401) {
+        setError('Session expired. Please log in again.');
+      } else {
+        setError(typeof detail === 'string' ? detail : 'Failed to load loans');
+      }
       setLoans([]);
     } finally {
       setLoading(false);

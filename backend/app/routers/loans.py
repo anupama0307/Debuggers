@@ -35,12 +35,22 @@ async def apply_for_loan(
         )
 
     try:
-        # Calculate risk score using the new engine
+        # Fetch existing approved loans for this user to calculate total EMI burden
+        existing_loans_response = supabase_client.table("loans").select("emi, status").eq(
+            "user_id", current_user.id
+        ).eq("status", "APPROVED").execute()
+        
+        existing_emi = 0.0
+        if existing_loans_response.data:
+            existing_emi = sum(float(loan.get("emi", 0) or 0) for loan in existing_loans_response.data)
+        
+        # Calculate risk score using the new engine (including existing EMI)
         risk_result = calculate_risk_score(
             amount=application.amount,
             tenure_months=application.tenure_months,
             income=application.monthly_income,
-            expenses=application.monthly_expenses
+            expenses=application.monthly_expenses,
+            existing_emi=existing_emi
         )
 
         # Generate AI explanation based on status
@@ -99,7 +109,8 @@ async def apply_for_loan(
             risk_score=risk_result["score"],
             max_approved_amount=max_approved,
             emi=risk_result["emi"],
-            ai_explanation=ai_explanation
+            ai_explanation=ai_explanation,
+            risk_reason=", ".join(risk_result["reasons"])
         )
 
     except HTTPException:

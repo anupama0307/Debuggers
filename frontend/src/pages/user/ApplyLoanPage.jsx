@@ -154,6 +154,20 @@ export default function ApplyLoanPage() {
                   </div>
                 )}
 
+                {result.risk_reason && (
+                  <div className="bg-white dark:bg-slate-800 p-4 rounded-lg text-left mb-6 border-l-4 border-orange-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">📊 Detailed Risk Assessment</p>
+                    <ul className="text-gray-700 dark:text-gray-300 space-y-1">
+                      {result.risk_reason.split(', ').map((reason, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-orange-500">•</span>
+                          <span>{reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <div className="flex gap-4 justify-center">
                   <button
                     onClick={() => navigate("/my-loans")}

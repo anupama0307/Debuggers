@@ -111,7 +111,7 @@ async def get_all_loans(admin: CurrentUser = Depends(verify_admin)):
     """
     Get all loan applications for admin review.
     
-    Returns loans ordered by newest first.
+    Returns loans ordered by newest first with user info.
     Requires admin role.
     """
     if not supabase_client:
@@ -121,11 +121,51 @@ async def get_all_loans(admin: CurrentUser = Depends(verify_admin)):
         )
 
     try:
+        # Fetch all loans
         response = supabase_client.table("loans").select("*").order(
             "created_at", desc=True
         ).execute()
         
-        return {"loans": response.data or [], "total": len(response.data or [])}
+        loans = response.data or []
+        
+        # Enrich loans with user info and derived fields
+        enriched_loans = []
+        for loan in loans:
+            # Get user info from profiles table
+            user_id = loan.get("user_id")
+            if user_id:
+                try:
+                    profile_response = supabase_client.table("profiles").select(
+                        "full_name, email"
+                    ).eq("id", user_id).limit(1).execute()
+                    
+                    if profile_response.data:
+                        profile = profile_response.data[0]
+                        loan["user_name"] = profile.get("full_name", "N/A")
+                        loan["user_email"] = profile.get("email", "N/A")
+                    else:
+                        loan["user_name"] = "Unknown"
+                        loan["user_email"] = "N/A"
+                except:
+                    loan["user_name"] = "Unknown"
+                    loan["user_email"] = "N/A"
+            else:
+                loan["user_name"] = "Unknown"
+                loan["user_email"] = "N/A"
+            
+            # Derive risk_category from risk_score if not present
+            if not loan.get("risk_category") and loan.get("risk_score") is not None:
+                score = loan.get("risk_score", 0)
+                if score <= 30:
+                    loan["risk_category"] = "LOW"
+                elif score <= 60:
+                    loan["risk_category"] = "MEDIUM"
+                else:
+                    loan["risk_category"] = "HIGH"
+            
+            enriched_loans.append(loan)
+        
+        return {"loans": enriched_loans, "total": len(enriched_loans)}
         
     except Exception as e:
         raise HTTPException(

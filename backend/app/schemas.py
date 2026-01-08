@@ -78,6 +78,7 @@ class LoanResponse(BaseModel):
     max_approved_amount: Optional[float] = Field(None, description="Maximum approved loan amount")
     emi: float = Field(..., description="Calculated EMI amount")
     ai_explanation: str = Field(..., description="AI-generated explanation")
+    risk_reason: Optional[str] = Field(None, description="Detailed risk assessment reasons")
 
     class Config:
         json_schema_extra = {
@@ -87,7 +88,8 @@ class LoanResponse(BaseModel):
                 "risk_score": 25.0,
                 "max_approved_amount": 100000.00,
                 "emi": 8884.88,
-                "ai_explanation": "Congratulations! Your loan has been approved based on your strong financial profile."
+                "ai_explanation": "Congratulations! Your loan has been approved based on your strong financial profile.",
+                "risk_reason": "Healthy DTI ratio: 17.77%"
             }
         }
 
