@@ -195,3 +195,47 @@ class ChatResponse(BaseModel):
                 "suggested_action": "Visit our branch to complete the documentation."
             }
         }
+
+
+# ============ Grievance Schemas ============
+class GrievanceCreate(BaseModel):
+    """Schema for creating a new grievance/support ticket."""
+    grievance_type: str = Field(..., description="Type: rejection_query, delay, other")
+    subject: str = Field(..., min_length=3, max_length=200, description="Subject of the grievance")
+    description: str = Field(..., min_length=10, max_length=2000, description="Detailed description")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "grievance_type": "rejection_query",
+                "subject": "Why was my loan rejected?",
+                "description": "I applied for a loan of 50000 but it was rejected. I need an explanation."
+            }
+        }
+
+
+class GrievanceResponse(BaseModel):
+    """Schema for grievance response with all fields."""
+    id: str = Field(..., description="Grievance ID")
+    user_id: str = Field(..., description="User who submitted")
+    grievance_type: str = Field(..., description="Type of grievance")
+    subject: str = Field(..., description="Subject")
+    description: str = Field(..., description="Description")
+    status: str = Field(..., description="Status: open, in_progress, resolved")
+    admin_response: Optional[str] = Field(None, description="Admin reply")
+    created_at: str = Field(..., description="Creation timestamp")
+    resolved_at: Optional[str] = Field(None, description="Resolution timestamp")
+
+
+class GrievanceReply(BaseModel):
+    """Schema for admin to reply to a grievance."""
+    status: str = Field(..., description="New status: in_progress, resolved")
+    admin_response: str = Field(..., min_length=5, max_length=2000, description="Admin reply message")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "status": "resolved",
+                "admin_response": "Your loan was rejected due to high DTI ratio. We recommend reducing existing debts."
+            }
+        }
