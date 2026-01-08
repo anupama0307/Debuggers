@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from app.config import supabase_client
 
 # OAuth2 scheme for token extraction from Authorization header
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login/form", auto_error=False)
 
 
 class CurrentUser(BaseModel):
