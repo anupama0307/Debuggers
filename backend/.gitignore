@@ -1,17 +1,105 @@
-# Python
+# ===================== PYTHON =====================
 __pycache__/
-*.pyc
-.env
+*.py[cod]
+*$py.class
+*. so
+.Python
 venv/
-.env.*
+ENV/
+env/
+.venv/
+*. egg
+*. egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+. installed.cfg
+lib/
+lib64/
+*. manifest
+*.spec
 
-# Node
+# ===================== DATABASE =====================
+*.db
+*.sqlite3
+*.sqlite
+riskon.db
+
+# ===================== NODE. JS =====================
 node_modules/
+npm-debug.log*
+yarn-debug. log*
+yarn-error.log*
+package-lock.json
+yarn.lock
 
-# OS
-.DS_Store
-Thumbs.db
+# ===================== BUILD =====================
+build/
+dist/
+. next/
+out/
+*. build
 
-# IDE
-.vscode/
+# ===================== ENVIRONMENT =====================
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test. local
+.env. production
+.env. production.local
+
+# ===================== IDE =====================
 .idea/
+.vscode/
+*.swp
+*.swo
+*. sublime-workspace
+*. sublime-project
+*.code-workspace
+
+# ===================== OS =====================
+.DS_Store
+. DS_Store? 
+._*
+. Spotlight-V100
+.Trashes
+ehthumbs. db
+Thumbs.db
+desktop.ini
+
+# ===================== CACHE =====================
+. cache/
+*. cache
+. eslintcache
+.parcel-cache/
+.npm/
+.yarn/
+
+# ===================== LOGS =====================
+logs/
+*.log
+npm-debug.log*
+yarn-debug. log*
+yarn-error.log*
+
+# ===================== TESTING =====================
+coverage/
+.coverage
+htmlcov/
+. tox/
+.pytest_cache/
+.nox/
+
+# ===================== MISC =====================
+*.bak
+*.tmp
+*. temp
+*.pid
+*.seed
+*.pid.lock
