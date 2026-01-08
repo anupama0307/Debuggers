@@ -273,5 +273,24 @@ docker run -d -p 8000:8000 --env-file .env --name riskoff-api riskoff-backend
 ## ✅ Implementation Summary
 All components (FastAPI backend, React frontend, Supabase, Auth, Risk Engine, AI, Parsing, Admin, Agent, Notifications, Audit, Docker, Security) are complete and tested.
 
+
+ARCHITECTURE DIAGRAM
+
+<img width="1600" height="872" alt="image" src="https://github.com/user-attachments/assets/f1e0f35b-429f-4141-a8fe-aa70ed7dfaf3" />
+
+
+
+
+
+
+
+
 ## 📄 License
 MIT License
+
+
+
+
+
+
+
