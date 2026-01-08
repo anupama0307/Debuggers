@@ -2,7 +2,8 @@ fastapi
 uvicorn
 supabase
 python-dotenv
-pydantic
+pydantic[email]
 python-multipart
 google-generativeai
 pandas
+slowapi

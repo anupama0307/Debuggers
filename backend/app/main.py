@@ -1,13 +1,21 @@
 """
 RISKOFF API - FastAPI Entry Point
 A Fintech application for risk assessment and loan management.
+With rate limiting and security middleware.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.config import supabase_client
 from app.routers import auth, loans, upload, admin, zudu
+
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 # Initialize FastAPI application
 app = FastAPI(
@@ -17,6 +25,12 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Attach limiter to app state
+app.state.limiter = limiter
+
+# Add rate limit exceeded exception handler
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS middleware
 app.add_middleware(
@@ -36,7 +50,8 @@ app.include_router(zudu.router)
 
 
 @app.get("/", tags=["Root"])
-async def root():
+@limiter.limit("60/minute")
+async def root(request: Request):
     """Root endpoint to check if the API is active."""
     return {
         "status": "active",
@@ -46,7 +61,8 @@ async def root():
 
 
 @app.get("/health", tags=["Health"])
-async def health_check():
+@limiter.limit("60/minute")
+async def health_check(request: Request):
     """
     Health check endpoint to verify API and Supabase connection status.
     """
@@ -70,6 +86,24 @@ async def health_check():
         health_status["message"] = f"Supabase connection error: {str(e)}"
 
     return health_status
+
+
+# Global rate limit middleware for all endpoints
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """
+    Global middleware that applies to all requests.
+    Adds security headers to responses.
+    """
+    response = await call_next(request)
+    
+    # Add security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    
+    return response
 
 
 if __name__ == "__main__":
