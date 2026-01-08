@@ -113,7 +113,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
         <Navbar />
         <div className="flex">
           <Sidebar />
@@ -126,13 +126,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
       <Navbar />
       <div className="flex">
         <Sidebar />
         <main className="flex-1 p-8">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">👤 My Profile</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-dark-text">👤 My Profile</h1>
             {!editing? (
               <button
                 onClick={() => setEditing(true)}
@@ -148,7 +148,7 @@ export default function ProfilePage() {
                     setFormData(profile);
                     setError('');
                   }}
-                  className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 border dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-border dark:text-dark-text"
                 >
                   Cancel
                 </button>
@@ -165,20 +165,20 @@ export default function ProfilePage() {
 
           {/* Error/Success Messages */}
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 border border-red-200">
+            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg mb-4 border border-red-200 dark:border-red-800">
               {error}
             </div>
           )}
           {success && (
-            <div className="bg-green-50 text-green-600 p-3 rounded-lg mb-4 border border-green-200">
+            <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 p-3 rounded-lg mb-4 border border-green-200 dark:border-green-800">
               {success}
             </div>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Customer Score Card */}
-            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Customer Score</h3>
+            <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm p-6 text-center">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text mb-4">Customer Score</h3>
               <div className="relative w-32 h-32 mx-auto mb-4">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle cx="64" cy="64" r="56" fill="none" stroke="#E5E7EB" strokeWidth="12" />
@@ -191,39 +191,39 @@ export default function ProfilePage() {
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-3xl font-bold">{dashboard?.customer_score || 0}</span>
+                  <span className="text-3xl font-bold dark:text-dark-text">{dashboard?.customer_score || 0}</span>
                 </div>
               </div>
-              <p className="text-gray-500">out of 900</p>
+              <p className="text-gray-500 dark:text-dark-muted">out of 900</p>
               {!dashboard?.profile_completed && (
                 <p className="text-blue-500 text-sm mt-2">💡 Add income details to improve score</p>
               )}
             </div>
 
             {/* Personal Info */}
-            <div className="bg-white rounded-xl shadow-sm p-6 lg:col-span-2">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Personal Information</h3>
+            <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm p-6 lg:col-span-2">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text mb-4">Personal Information</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Full Name</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Full Name</label>
                   {editing? (
                     <input
                       type="text"
                       name="full_name"
                       value={formData.full_name || ''}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text"
                     />
                   ) : (
-                    <p className="font-medium">{profile?.full_name}</p>
+                    <p className="font-medium dark:text-dark-text">{profile?.full_name}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Email</label>
-                  <p className="font-medium">{profile?.email}</p>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Email</label>
+                  <p className="font-medium dark:text-dark-text">{profile?.email}</p>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Phone</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Phone</label>
                   {editing? (
                     <div>
                       <input
@@ -233,7 +233,7 @@ export default function ProfilePage() {
                         onChange={handleChange}
                         maxLength={10}
                         placeholder="10 digit number"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text ${
                           formData.phone && formData.phone.length !== 10 ? 'border-red-300' : ''
                         }`}
                       />
@@ -242,81 +242,81 @@ export default function ProfilePage() {
                       )}
                     </div>
                   ) : (
-                    <p className="font-medium">{profile?.phone}</p>
+                    <p className="font-medium dark:text-dark-text">{profile?.phone}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">City</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">City</label>
                   {editing? (
                     <input
                       type="text"
                       name="city"
                       value={formData.city || ''}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text"
                     />
                   ) : (
-                    <p className="font-medium">{profile?.city || 'N/A'}</p>
+                    <p className="font-medium dark:text-dark-text">{profile?.city || 'N/A'}</p>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Employment Info */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Employment</h3>
+            <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text mb-4">Employment</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Occupation</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Occupation</label>
                   {editing? (
                     <input
                       type="text"
                       name="occupation"
                       value={formData.occupation || ''}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text"
                     />
                   ) : (
-                    <p className="font-medium">{profile?.occupation || 'N/A'}</p>
+                    <p className="font-medium dark:text-dark-text">{profile?.occupation || 'N/A'}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Employer</label>
-                  {editing?  (
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Employer</label>
+                  {editing? (
                     <input
                       type="text"
                       name="employer_name"
                       value={formData.employer_name || ''}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text"
                     />
                   ) : (
-                    <p className="font-medium">{profile?.employer_name || 'N/A'}</p>
+                    <p className="font-medium dark:text-dark-text">{profile?.employer_name || 'N/A'}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Years at Job</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Years at Job</label>
                   {editing? (
                     <input
                       type="number"
                       name="employment_years"
                       value={formData.employment_years || 0}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text"
                     />
                   ) : (
-                    <p className="font-medium">{profile?.employment_years || 0} years</p>
+                    <p className="font-medium dark:text-dark-text">{profile?.employment_years || 0} years</p>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Financial Info */}
-            <div className="bg-white rounded-xl shadow-sm p-6 lg:col-span-2">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Financial Information</h3>
+            <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm p-6 lg:col-span-2">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-dark-text mb-4">Financial Information</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Annual Income (₹) *</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Annual Income (₹) *</label>
                   {editing? (
                     <div>
                       <input
@@ -326,7 +326,7 @@ export default function ProfilePage() {
                         onChange={handleChange}
                         min={50000}
                         placeholder="Min ₹50,000"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text ${
                           formData.annual_income && formData.annual_income < 50000 ? 'border-red-300' : ''
                         }`}
                       />
@@ -335,13 +335,13 @@ export default function ProfilePage() {
                       )}
                     </div>
                   ) : (
-                    <p className="font-medium text-green-600">
+                    <p className="font-medium text-green-600 dark:text-green-400">
                       ₹{profile?.annual_income?.toLocaleString('en-IN') || 0}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Monthly Expenses (₹)</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Monthly Expenses (₹)</label>
                   {editing? (
                     <div>
                       <input
@@ -351,7 +351,7 @@ export default function ProfilePage() {
                         onChange={handleChange}
                         min={0}
                         placeholder="Cannot be negative"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text ${
                           formData.monthly_expenses < 0 ? 'border-red-300' : ''
                         }`}
                       />
@@ -360,13 +360,13 @@ export default function ProfilePage() {
                       )}
                     </div>
                   ) : (
-                    <p className="font-medium text-red-600">
+                    <p className="font-medium text-red-600 dark:text-red-400">
                       ₹{profile?.monthly_expenses?.toLocaleString('en-IN') || 0}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Account Balance (₹)</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Account Balance (₹)</label>
                   {editing? (
                     <div>
                       <input
@@ -376,7 +376,7 @@ export default function ProfilePage() {
                         onChange={handleChange}
                         min={0}
                         placeholder="Cannot be negative"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text ${
                           formData.account_balance < 0 ? 'border-red-300' : ''
                         }`}
                       />
@@ -385,79 +385,79 @@ export default function ProfilePage() {
                       )}
                     </div>
                   ) : (
-                    <p className="font-medium text-blue-600">
+                    <p className="font-medium text-blue-600 dark:text-blue-400">
                       ₹{profile?.account_balance?.toLocaleString('en-IN') || 0}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Mutual Funds (₹)</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Mutual Funds (₹)</label>
                   {editing? (
                     <input
                       type="number"
                       name="mutual_funds"
                       value={formData.mutual_funds || 0}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text"
                     />
                   ) : (
-                    <p className="font-medium">₹{profile?.mutual_funds?.toLocaleString('en-IN') || 0}</p>
+                    <p className="font-medium dark:text-dark-text">₹{profile?.mutual_funds?.toLocaleString('en-IN') || 0}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Stocks (₹)</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Stocks (₹)</label>
                   {editing? (
                     <input
                       type="number"
                       name="stocks"
                       value={formData.stocks || 0}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text"
                     />
                   ) : (
-                    <p className="font-medium">₹{profile?.stocks?. toLocaleString('en-IN') || 0}</p>
+                    <p className="font-medium dark:text-dark-text">₹{profile?.stocks?.toLocaleString('en-IN') || 0}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Fixed Deposits (₹)</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Fixed Deposits (₹)</label>
                   {editing? (
                     <input
                       type="number"
                       name="fixed_deposits"
                       value={formData.fixed_deposits || 0}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text"
                     />
                   ) : (
-                    <p className="font-medium">₹{profile?.fixed_deposits?.toLocaleString('en-IN') || 0}</p>
+                    <p className="font-medium dark:text-dark-text">₹{profile?.fixed_deposits?.toLocaleString('en-IN') || 0}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Existing Loans</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Existing Loans</label>
                   {editing? (
                     <input
                       type="number"
                       name="existing_loans"
                       value={formData.existing_loans || 0}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text"
                     />
                   ) : (
-                    <p className="font-medium">{profile?.existing_loans || 0}</p>
+                    <p className="font-medium dark:text-dark-text">{profile?.existing_loans || 0}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Existing Loan Amount (₹)</label>
+                  <label className="block text-sm text-gray-500 dark:text-dark-muted mb-1">Existing Loan Amount (₹)</label>
                   {editing? (
                     <input
                       type="number"
                       name="existing_loan_amount"
                       value={formData.existing_loan_amount || 0}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text"
                     />
                   ) : (
-                    <p className="font-medium text-orange-600">
+                    <p className="font-medium text-orange-600 dark:text-orange-400">
                       ₹{profile?.existing_loan_amount?.toLocaleString('en-IN') || 0}
                     </p>
                   )}
