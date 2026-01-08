@@ -321,3 +321,48 @@ Respond in a conversational manner. If there's a clear next action the user shou
             "suggested_action": "Try again or contact support"
         }
 
+
+# ============ LLM Service Class (for unified import) ============
+class LLMService:
+    """
+    Unified LLM service class that wraps all LLM functions.
+    Allows import as: from app.services.llm import llm_service
+    """
+    
+    def __init__(self):
+        self.model = gemini_model
+    
+    async def generate_loan_summary(self, amount: float, tenure_months: int, risk_score: float, risk_status: str) -> str:
+        return await generate_loan_summary(amount, tenure_months, risk_score, risk_status)
+    
+    async def generate_risk_explanation(self, score: float, status: str, reasons: list) -> str:
+        return await generate_risk_explanation(score, status, reasons)
+    
+    async def generate_voice_response(self, context: str, user_name: Optional[str] = None) -> str:
+        return await generate_voice_response(context, user_name)
+    
+    async def analyze_spending_patterns(self, transactions: list) -> dict:
+        return await analyze_spending_patterns(transactions)
+    
+    async def generate_rejection_reason(self, reasons: list) -> str:
+        return await generate_rejection_reason(reasons)
+    
+    async def generate_approval_message(self, amount: float, emi: float, tenure_months: int) -> str:
+        return await generate_approval_message(amount, emi, tenure_months)
+    
+    async def generate_bank_chat_response(self, user_name: str, loan_details: dict, user_query: str) -> dict:
+        return await generate_bank_chat_response(user_name, loan_details, user_query)
+    
+    async def generate_content(self, prompt: str) -> str:
+        """Generic content generation using Gemini."""
+        if not self.model:
+            return "AI service unavailable"
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text.strip()
+        except Exception as e:
+            return f"Error generating content: {str(e)}"
+
+
+# Create singleton instance for import
+llm_service = LLMService()
