@@ -1,14 +1,14 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL:  'http://localhost:8000',
+  baseURL: 'http://localhost:8000',
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
 // Add token to requests
-api. interceptors.request. use((config) => {
+api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -25,7 +25,7 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
-    return Promise. reject(error);
+    return Promise.reject(error);
   }
 );
 

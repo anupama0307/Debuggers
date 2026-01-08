@@ -45,8 +45,10 @@ def calculate_risk_score(
     """
     Calculate risk score based on loan application parameters.
     
-    Scoring Rules (Member 3 Spec):
+    Scoring Rules:
     - Start at 0 points
+    - If EMI + expenses > income: INSTANT REJECT (can't afford)
+    - If EMI > 50% of (income - expenses): Add 40 points (high burden on disposable income)
     - DTI > 0.40: Add 30 points
     - DTI > 0.60: Add 50 points (instead of 30)
     - Expenses > 70% of income: Add 20 points
@@ -82,6 +84,33 @@ def calculate_risk_score(
     
     # Calculate expense ratio
     expense_ratio = expenses / income
+    
+    # Calculate disposable income (income after expenses)
+    disposable_income = income - expenses
+    
+    # ========== CRITICAL CHECK: CAN THEY AFFORD IT? ==========
+    
+    # If EMI + existing expenses exceed income, they literally cannot pay
+    if (emi + expenses) > income:
+        return {
+            "score": 100.0,
+            "status": "REJECTED",
+            "emi": emi,
+            "reasons": [
+                f"Unaffordable: EMI (₹{emi:,.0f}) + Expenses (₹{expenses:,.0f}) = ₹{(emi + expenses):,.0f} exceeds monthly income (₹{income:,.0f})",
+                "Applicant cannot afford this loan with current income and expenses"
+            ]
+        }
+    
+    # If EMI takes more than 70% of disposable income, very risky
+    if disposable_income > 0:
+        emi_to_disposable = emi / disposable_income
+        if emi_to_disposable > 0.70:
+            score += 40
+            reasons.append(f"EMI is {emi_to_disposable:.0%} of disposable income (very high)")
+        elif emi_to_disposable > 0.50:
+            score += 25
+            reasons.append(f"EMI is {emi_to_disposable:.0%} of disposable income (moderate)")
     
     # ========== SCORING RULES ==========
     

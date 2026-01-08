@@ -65,38 +65,38 @@ export default function AdminGrievancesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
       <Navbar />
       <div className="flex">
         <Sidebar />
         <main className="flex-1 p-8">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-dark-text mb-6">💬 Grievances</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">💬 Grievances</h1>
 
           {loading ? (
             <LoadingSpinner text="Loading grievances..." />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Grievances List */}
-              <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm p-6">
-                <h2 className="font-semibold text-gray-800 dark:text-dark-text mb-4">All Grievances</h2>
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+                <h2 className="font-semibold text-gray-800 dark:text-white mb-4">All Grievances</h2>
                 {grievances.length === 0 ? (
-                  <p className="text-gray-500 dark:text-dark-muted text-center py-8">No grievances found</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">No grievances found</p>
                 ) : (
                   <div className="space-y-3">
                     {grievances.map((g) => (
                       <div
                         key={g.id}
                         onClick={() => handleViewGrievance(g.id)}
-                        className={`p-4 border dark:border-dark-border rounded-lg cursor-pointer transition ${
+                        className={`p-4 border dark:border-slate-600 rounded-lg cursor-pointer transition ${
                           selectedGrievance?.grievance?.id === g.id
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                            : 'hover:bg-gray-50 dark:hover:bg-dark-border'
+                            : 'hover:bg-gray-50 dark:hover:bg-slate-700'
                         }`}
                       >
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-medium text-gray-800 dark:text-dark-text">{g.subject}</p>
-                            <p className="text-sm text-gray-500 dark:text-dark-muted">{g.user_name}</p>
+                            <p className="font-medium text-gray-800 dark:text-white">{g.subject}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{g.user_name}</p>
                           </div>
                           <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadge(g.status)}`}>
                             {g.status}
@@ -109,24 +109,24 @@ export default function AdminGrievancesPage() {
               </div>
 
               {/* Grievance Detail */}
-              <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm p-6">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
                 {selectedGrievance ? (
                   <div>
-                    <h2 className="font-semibold text-gray-800 dark:text-dark-text mb-4">Grievance Details</h2>
+                    <h2 className="font-semibold text-gray-800 dark:text-white mb-4">Grievance Details</h2>
                     
                     <div className="mb-4">
-                      <p className="text-sm text-gray-500 dark:text-dark-muted">From</p>
-                      <p className="font-medium dark:text-dark-text">{selectedGrievance.user?.full_name}</p>
-                      <p className="text-sm text-gray-500 dark:text-dark-muted">{selectedGrievance.user?.email}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">From</p>
+                      <p className="font-medium dark:text-white">{selectedGrievance.user?.full_name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{selectedGrievance.user?.email}</p>
                     </div>
 
                     <div className="mb-4">
-                      <p className="text-sm text-gray-500 dark:text-dark-muted">Subject</p>
-                      <p className="font-medium dark:text-dark-text">{selectedGrievance.grievance?.subject}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Subject</p>
+                      <p className="font-medium dark:text-white">{selectedGrievance.grievance?.subject}</p>
                     </div>
 
                     <div className="mb-4">
-                      <p className="text-sm text-gray-500 dark:text-dark-muted">Description</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Description</p>
                       <p className="text-gray-700 dark:text-gray-300">{selectedGrievance.grievance?.description}</p>
                     </div>
 
@@ -140,12 +140,12 @@ export default function AdminGrievancesPage() {
                     )}
 
                     <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-dark-muted mb-1">Your Response</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Your Response</label>
                       <textarea
                         value={response}
                         onChange={(e) => setResponse(e.target.value)}
                         rows={6}
-                        className="w-full px-3 py-2 border dark:border-dark-border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-dark-bg dark:text-dark-text"
+                        className="w-full px-3 py-2 border dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-900 dark:text-white"
                         placeholder="Enter your response..."
                       />
                     </div>
@@ -159,7 +159,7 @@ export default function AdminGrievancesPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-gray-500 dark:text-dark-muted">
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                     Select a grievance to view details
                   </div>
                 )}

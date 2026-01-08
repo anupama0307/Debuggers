@@ -14,7 +14,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white dark:bg-dark-card shadow-sm border-b dark:border-dark-border sticky top-0 z-50">
+    <nav className="bg-white dark:bg-slate-800 shadow-sm border-b dark:border-slate-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -37,7 +37,7 @@ export default function Navbar() {
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleDarkMode}
-              className="p-2 rounded-lg bg-gray-100 dark:bg-dark-border hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              className="p-2 rounded-lg bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
               aria-label="Toggle dark mode"
             >
               {darkMode ? (
@@ -57,7 +57,7 @@ export default function Navbar() {
                 {user?.full_name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || 'U'}
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-700 dark:text-dark-text">
+                <span className="text-sm font-medium text-gray-700 dark:text-white">
                   {user?.full_name || user?.email?.split('@')[0]}
                 </span>
                 <span className={`text-xs font-semibold ${
