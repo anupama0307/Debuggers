@@ -33,8 +33,8 @@ export default function Sidebar() {
             to={link.path}
             className={`flex items-center px-4 py-3 rounded-lg transition ${
               location.pathname === link.path
-                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-semibold'
-                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-semibold"
+                : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
             }`}
           >
             <span className="mr-3 text-xl">{link.icon}</span>
