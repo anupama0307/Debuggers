@@ -332,3 +332,45 @@ async def parse_receipt_image(file_content: bytes, content_type: str) -> Dict[st
 def parse_bank_statement(file_content: bytes) -> List[Dict[str, Any]]:
     """Legacy wrapper for parse_bank_statement_csv."""
     return parse_bank_statement_csv(file_content)
+
+
+# ============ Audio Transcription ============
+async def transcribe_audio(file_content: bytes, mime_type: str) -> str:
+    """
+    Transcribe audio file to text using Gemini 1.5 Flash.
+    
+    Args:
+        file_content: Raw audio file bytes
+        mime_type: MIME type of the audio (e.g., 'audio/mpeg', 'audio/wav')
+        
+    Returns:
+        Transcribed text from the audio
+        
+    Raises:
+        ValueError: If transcription fails
+    """
+    if not gemini_model:
+        raise ValueError("Gemini AI model not initialized. Check GEMINI_API_KEY.")
+    
+    try:
+        # Prepare the audio for Gemini
+        audio_part = {
+            "mime_type": mime_type,
+            "data": file_content
+        }
+        
+        # Prompt for transcription
+        prompt = "Transcribe this audio file exactly as spoken. Return only the transcribed text, no additional commentary or formatting."
+        
+        # Generate transcription using Gemini
+        response = gemini_model.generate_content([prompt, audio_part])
+        
+        if not response or not response.text:
+            raise ValueError("Empty response from Gemini")
+        
+        transcribed_text = response.text.strip()
+        
+        return transcribed_text
+        
+    except Exception as e:
+        raise ValueError(f"Error transcribing audio: {e}")
