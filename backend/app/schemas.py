@@ -50,18 +50,62 @@ class LoanApplication(BaseModel):
         }
 
 
+class LoanCreate(BaseModel):
+    """Schema for creating a new loan application (Member 3 spec)."""
+    amount: float = Field(..., gt=0, description="Loan amount requested")
+    tenure_months: int = Field(..., ge=1, le=360, description="Loan tenure in months")
+    monthly_income: float = Field(..., gt=0, description="Monthly income")
+    monthly_expenses: float = Field(..., ge=0, description="Monthly expenses")
+    purpose: str = Field(..., min_length=3, max_length=200, description="Purpose of the loan")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "amount": 100000.00,
+                "tenure_months": 24,
+                "monthly_income": 75000.00,
+                "monthly_expenses": 30000.00,
+                "purpose": "Business expansion"
+            }
+        }
+
+
+class LoanResponse(BaseModel):
+    """Schema for loan application response with risk assessment."""
+    id: int = Field(..., description="Loan ID")
+    status: str = Field(..., description="Loan status: APPROVED, REJECTED, PENDING")
+    risk_score: float = Field(..., description="Risk score (0-100)")
+    max_approved_amount: Optional[float] = Field(None, description="Maximum approved loan amount")
+    emi: float = Field(..., description="Calculated EMI amount")
+    ai_explanation: str = Field(..., description="AI-generated explanation")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": 1,
+                "status": "APPROVED",
+                "risk_score": 25.0,
+                "max_approved_amount": 100000.00,
+                "emi": 8884.88,
+                "ai_explanation": "Congratulations! Your loan has been approved based on your strong financial profile."
+            }
+        }
+
+
 class RiskResult(BaseModel):
     """Schema for risk assessment result."""
     score: float = Field(..., ge=0, le=100, description="Risk score (0-100)")
-    status: str = Field(..., description="Risk status: LOW, MEDIUM, HIGH")
+    status: str = Field(..., description="Risk status: APPROVED, REJECTED")
+    emi: float = Field(..., description="Calculated EMI amount")
     reasons: List[str] = Field(default_factory=list, description="Reasons for the risk score")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "score": 75.5,
-                "status": "MEDIUM",
-                "reasons": ["Debt-to-income ratio is moderate", "Short credit history"]
+                "score": 25.0,
+                "status": "APPROVED",
+                "emi": 8884.88,
+                "reasons": ["Healthy debt-to-income ratio"]
             }
         }
 
@@ -78,16 +122,14 @@ class ReceiptData(BaseModel):
 # ============ Zudu Voice Agent Schemas ============
 class ZuduResponse(BaseModel):
     """Schema for Zudu voice agent response."""
-    text: str = Field(..., description="Text response for voice synthesis")
-    loan_status: Optional[str] = Field(None, description="Current loan status")
-    amount_due: Optional[float] = Field(None, description="Amount due")
+    voice_text: str = Field(..., description="Text response for voice synthesis")
+    data: Optional[dict] = Field(default_factory=dict, description="Additional data payload")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "text": "Your loan of 50000 rupees is approved. Next EMI of 2500 is due on January 15th.",
-                "loan_status": "APPROVED",
-                "amount_due": 2500.00
+                "voice_text": "Hello John. Your loan of 50000 rupees is currently Approved.",
+                "data": {"loan_status": "APPROVED", "amount": 50000, "emi": 2500.00}
             }
         }
 
@@ -98,3 +140,30 @@ class LoanStatusUpdate(BaseModel):
     loan_id: str = Field(..., description="Loan ID")
     status: str = Field(..., description="New status: PENDING, APPROVED, REJECTED")
     remarks: Optional[str] = Field(None, description="Admin remarks")
+
+
+# ============ AI Agent Schemas ============
+class ChatRequest(BaseModel):
+    """Schema for AI Agent chat request."""
+    query: str = Field(..., min_length=1, max_length=1000, description="User's query to the AI agent")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "query": "What is my loan status?"
+            }
+        }
+
+
+class ChatResponse(BaseModel):
+    """Schema for AI Agent chat response."""
+    response: str = Field(..., description="AI-generated response")
+    suggested_action: Optional[str] = Field(None, description="Suggested next action for the user")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "response": "Your loan of ₹100,000 has been approved! Your monthly EMI is ₹8,884.88.",
+                "suggested_action": "Visit our branch to complete the documentation."
+            }
+        }
