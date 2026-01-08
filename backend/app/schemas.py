@@ -142,6 +142,34 @@ class LoanStatusUpdate(BaseModel):
     remarks: Optional[str] = Field(None, description="Admin remarks")
 
 
+class RiskAnalysisRequest(BaseModel):
+    """Schema for admin risk analysis tool."""
+    age: int = Field(..., ge=18, le=100, description="Customer age")
+    annual_income: float = Field(..., gt=0, description="Annual income in INR")
+    employment_years: int = Field(..., ge=0, description="Years of employment")
+    existing_loan_amount: float = Field(default=0, ge=0, description="Existing loan amount")
+    monthly_expenses: float = Field(..., ge=0, description="Monthly expenses")
+    loan_amount_requested: float = Field(..., gt=0, description="Requested loan amount")
+    loan_tenure_months: int = Field(..., ge=6, le=240, description="Loan tenure in months")
+    customer_score: int = Field(..., ge=0, le=900, description="Customer credit score")
+    has_expense_mismatch: bool = Field(default=False, description="Fraud flag for expense mismatch")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "age": 30,
+                "annual_income": 600000,
+                "employment_years": 4,
+                "existing_loan_amount": 50000,
+                "monthly_expenses": 25000,
+                "loan_amount_requested": 200000,
+                "loan_tenure_months": 36,
+                "customer_score": 650,
+                "has_expense_mismatch": False
+            }
+        }
+
+
 # ============ AI Agent Schemas ============
 class ChatRequest(BaseModel):
     """Schema for AI Agent chat request."""
