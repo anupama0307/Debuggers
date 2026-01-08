@@ -4,9 +4,10 @@ Handles user profile and dashboard data.
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import date
+import re
 
 from app.config import supabase_client
 from app.utils.security import get_current_user, CurrentUser
@@ -18,7 +19,7 @@ router = APIRouter(
 
 
 class ProfileUpdate(BaseModel):
-    """Schema for updating profile data."""
+    """Schema for updating profile data with validation."""
     full_name: Optional[str] = None
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None
@@ -38,6 +39,45 @@ class ProfileUpdate(BaseModel):
     fixed_deposits: Optional[float] = None
     existing_loans: Optional[int] = None
     existing_loan_amount: Optional[float] = None
+
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v):
+        if v is not None:
+            # Remove any spaces or dashes
+            cleaned = re.sub(r'[\s\-]', '', v)
+            if not re.match(r'^\d{10}$', cleaned):
+                raise ValueError('Phone number must be exactly 10 digits')
+            return cleaned
+        return v
+
+    @field_validator('annual_income')
+    @classmethod
+    def validate_annual_income(cls, v):
+        if v is not None and v < 50000:
+            raise ValueError('Annual income must be at least ₹50,000')
+        return v
+
+    @field_validator('monthly_expenses')
+    @classmethod
+    def validate_monthly_expenses(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('Monthly expenses cannot be negative')
+        return v
+
+    @field_validator('account_balance')
+    @classmethod
+    def validate_account_balance(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('Account balance cannot be negative')
+        return v
+
+    @field_validator('mutual_funds', 'stocks', 'fixed_deposits', 'existing_loan_amount')
+    @classmethod
+    def validate_non_negative(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('Value cannot be negative')
+        return v
 
 
 @router.get("/profile")

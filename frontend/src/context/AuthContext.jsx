@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
     
     if (token && savedUser) {
       setUser(JSON.parse(savedUser));
-      api.defaults.headers. common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
     setLoading(false);
   }, []);
@@ -22,17 +22,27 @@ export function AuthProvider({ children }) {
     const response = await api.post('/auth/login', { email, password });
     const { access_token, user_id, email: userEmail, full_name } = response.data;
     
+    // Set token first so we can fetch profile
+    localStorage.setItem('token', access_token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+    
+    // Fetch actual role from profile
+    let role = 'user';
+    try {
+      const profileResponse = await api.get('/user/profile');
+      role = profileResponse.data?.role || 'user';
+    } catch (err) {
+      console.error('Error fetching profile role:', err);
+    }
+    
     const userData = {
       id: user_id,
       email: userEmail,
       full_name: full_name,
-      role: userEmail.includes('admin') ? 'admin' : 'user'
+      role: role
     };
     
-    localStorage.setItem('token', access_token);
     localStorage.setItem('user', JSON.stringify(userData));
-    api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-    
     setUser(userData);
     return userData;
   };
@@ -72,7 +82,7 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
-    localStorage. removeItem('token');
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);

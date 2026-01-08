@@ -61,7 +61,7 @@ function AppRoutes() {
       
       {/* Default */}
       <Route path="/" element={
-        user ?  <Navigate to={user.role === 'admin' ? '/admin' :  '/dashboard'} /> : <Navigate to="/login" />
+        user ? <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} /> : <Navigate to="/login" />
       } />
     </Routes>
   );

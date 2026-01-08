@@ -36,16 +36,58 @@ export default function ProfilePage() {
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
+    
+    // For phone, only allow digits and limit to 10
+    if (name === 'phone') {
+      const cleaned = value.replace(/\D/g, '').slice(0, 10);
+      setFormData(prev => ({ ...prev, [name]: cleaned }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: type === 'number' ? (parseFloat(value) || 0) : value
     }));
   };
 
+  const validateForm = () => {
+    // Phone validation
+    if (formData.phone && formData.phone.length !== 10) {
+      setError('Phone number must be exactly 10 digits');
+      return false;
+    }
+    
+    // Annual income validation
+    if (formData.annual_income && formData.annual_income < 50000) {
+      setError('Annual income must be at least ₹50,000');
+      return false;
+    }
+    
+    // Monthly expenses validation
+    if (formData.monthly_expenses && formData.monthly_expenses < 0) {
+      setError('Monthly expenses cannot be negative');
+      return false;
+    }
+    
+    // Account balance validation
+    if (formData.account_balance && formData.account_balance < 0) {
+      setError('Account balance cannot be negative');
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleSave = async () => {
-    setSaving(true);
     setError('');
     setSuccess('');
+    
+    // Validate before saving
+    if (!validateForm()) {
+      return;
+    }
+    
+    setSaving(true);
     try {
       const response = await api.put('/user/profile', formData);
       setProfile(response.data.profile || formData);
@@ -56,7 +98,14 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Error saving profile:', error);
       const detail = error.response?.data?.detail;
-      setError(typeof detail === 'string' ? detail : 'Failed to save profile');
+      // Handle Pydantic validation errors
+      if (Array.isArray(detail)) {
+        setError(detail.map(e => e.msg).join(', '));
+      } else if (typeof detail === 'string') {
+        setError(detail);
+      } else {
+        setError('Failed to save profile');
+      }
     } finally {
       setSaving(false);
     }
@@ -176,13 +225,22 @@ export default function ProfilePage() {
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">Phone</label>
                   {editing? (
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone || ''}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone || ''}
+                        onChange={handleChange}
+                        maxLength={10}
+                        placeholder="10 digit number"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                          formData.phone && formData.phone.length !== 10 ? 'border-red-300' : ''
+                        }`}
+                      />
+                      {formData.phone && formData.phone.length !== 10 && (
+                        <p className="text-red-500 text-xs mt-1">Must be 10 digits ({formData.phone.length}/10)</p>
+                      )}
+                    </div>
                   ) : (
                     <p className="font-medium">{profile?.phone}</p>
                   )}
@@ -258,31 +316,49 @@ export default function ProfilePage() {
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Financial Information</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-500 mb-1">Annual Income (₹)</label>
-                  {editing?  (
-                    <input
-                      type="number"
-                      name="annual_income"
-                      value={formData.annual_income || 0}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
+                  <label className="block text-sm text-gray-500 mb-1">Annual Income (₹) *</label>
+                  {editing? (
+                    <div>
+                      <input
+                        type="number"
+                        name="annual_income"
+                        value={formData.annual_income || ''}
+                        onChange={handleChange}
+                        min={50000}
+                        placeholder="Min ₹50,000"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                          formData.annual_income && formData.annual_income < 50000 ? 'border-red-300' : ''
+                        }`}
+                      />
+                      {formData.annual_income && formData.annual_income < 50000 && (
+                        <p className="text-red-500 text-xs mt-1">Minimum ₹50,000 required</p>
+                      )}
+                    </div>
                   ) : (
                     <p className="font-medium text-green-600">
-                      ₹{profile?.annual_income?. toLocaleString('en-IN') || 0}
+                      ₹{profile?.annual_income?.toLocaleString('en-IN') || 0}
                     </p>
                   )}
                 </div>
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">Monthly Expenses (₹)</label>
                   {editing? (
-                    <input
-                      type="number"
-                      name="monthly_expenses"
-                      value={formData.monthly_expenses || 0}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div>
+                      <input
+                        type="number"
+                        name="monthly_expenses"
+                        value={formData.monthly_expenses || ''}
+                        onChange={handleChange}
+                        min={0}
+                        placeholder="Cannot be negative"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                          formData.monthly_expenses < 0 ? 'border-red-300' : ''
+                        }`}
+                      />
+                      {formData.monthly_expenses < 0 && (
+                        <p className="text-red-500 text-xs mt-1">Cannot be negative</p>
+                      )}
+                    </div>
                   ) : (
                     <p className="font-medium text-red-600">
                       ₹{profile?.monthly_expenses?.toLocaleString('en-IN') || 0}
@@ -292,13 +368,22 @@ export default function ProfilePage() {
                 <div>
                   <label className="block text-sm text-gray-500 mb-1">Account Balance (₹)</label>
                   {editing? (
-                    <input
-                      type="number"
-                      name="account_balance"
-                      value={formData.account_balance || 0}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div>
+                      <input
+                        type="number"
+                        name="account_balance"
+                        value={formData.account_balance || ''}
+                        onChange={handleChange}
+                        min={0}
+                        placeholder="Cannot be negative"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                          formData.account_balance < 0 ? 'border-red-300' : ''
+                        }`}
+                      />
+                      {formData.account_balance < 0 && (
+                        <p className="text-red-500 text-xs mt-1">Cannot be negative</p>
+                      )}
+                    </div>
                   ) : (
                     <p className="font-medium text-blue-600">
                       ₹{profile?.account_balance?.toLocaleString('en-IN') || 0}
