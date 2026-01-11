@@ -33,8 +33,15 @@ try:
     if GEMINI_API_KEY:
         import google.generativeai as genai
         genai.configure(api_key=GEMINI_API_KEY)
-        gemini_model = genai.GenerativeModel("gemini-1.5-flash")
-        print("✅ Gemini AI model initialized successfully.")
+        # Try gemini-2.0-flash first (newer), fallback to gemini-1.5-flash
+        try:
+            gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+            # Quick test to verify model works
+            print("✅ Gemini AI model (gemini-2.0-flash) initialized successfully.")
+        except Exception as model_error:
+            print(f"⚠️ gemini-2.0-flash not available, trying gemini-1.5-flash...")
+            gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+            print("✅ Gemini AI model (gemini-1.5-flash) initialized successfully.")
     else:
         print("⚠️ Warning: GEMINI_API_KEY not found.")
         print("   Gemini AI features will be unavailable.")

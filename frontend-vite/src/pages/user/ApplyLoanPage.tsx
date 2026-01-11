@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { Wallet, IndianRupee, Calendar, TrendingUp, TrendingDown, FileText, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import api from '@/services/api';
 
@@ -14,6 +15,7 @@ export default function ApplyLoanPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [showConfirm, setShowConfirm] = useState(false);
     const [formData, setFormData] = useState({
         amount: '',
         tenure_months: '',
@@ -26,12 +28,7 @@ export default function ApplyLoanPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setSuccess('');
-
-        // Validation
+    const validateForm = () => {
         const amount = parseFloat(formData.amount);
         const tenure = parseInt(formData.tenure_months);
         const income = parseFloat(formData.monthly_income);
@@ -39,39 +36,54 @@ export default function ApplyLoanPage() {
 
         if (amount < 10000) {
             setError('Minimum loan amount is Rs. 10,000');
-            return;
+            return false;
         }
         if (tenure < 6 || tenure > 60) {
             setError('Tenure must be between 6 and 60 months');
-            return;
+            return false;
         }
         if (income <= 0) {
             setError('Please enter a valid monthly income');
-            return;
+            return false;
         }
         if (expenses < 0) {
             setError('Monthly expenses cannot be negative');
-            return;
+            return false;
         }
         if (formData.purpose.length < 3) {
             setError('Please specify the purpose of the loan');
-            return;
+            return false;
         }
+        return true;
+    };
 
+    const handleSubmitClick = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        if (validateForm()) {
+            setShowConfirm(true);
+        }
+    };
+
+    const handleConfirmedSubmit = async () => {
+        setShowConfirm(false);
         setLoading(true);
+
         try {
             const payload = {
-                amount,
-                tenure_months: tenure,
-                monthly_income: income,
-                monthly_expenses: expenses,
+                amount: parseFloat(formData.amount),
+                tenure_months: parseInt(formData.tenure_months),
+                monthly_income: parseFloat(formData.monthly_income),
+                monthly_expenses: parseFloat(formData.monthly_expenses),
                 purpose: formData.purpose.trim()
             };
 
             const response = await api.post('/loans/apply', payload);
             console.log('Loan application response:', response.data);
 
-            setSuccess('Loan application submitted successfully! Redirecting...');
+            setSuccess('Loan application submitted successfully! Redirecting to My Loans...');
             setTimeout(() => navigate('/my-loans'), 2000);
         } catch (err: any) {
             console.error('Loan application error:', err.response?.data);
@@ -80,8 +92,10 @@ export default function ApplyLoanPage() {
                 setError(detail);
             } else if (Array.isArray(detail)) {
                 setError(detail.map((d: any) => d.msg).join(', '));
+            } else if (err.message) {
+                setError(`Network error: ${err.message}. Please check your connection.`);
             } else {
-                setError('Failed to submit application. Please try again.');
+                setError('Failed to submit application. Please try again later.');
             }
         } finally {
             setLoading(false);
@@ -123,7 +137,7 @@ export default function ApplyLoanPage() {
                                 <CardDescription className="text-base">All fields are required</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <form onSubmit={handleSubmit} className="space-y-6">
+                                <form onSubmit={handleSubmitClick} className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <Label className="text-base font-medium">Loan Amount (Rs.)</Label>
@@ -232,6 +246,18 @@ export default function ApplyLoanPage() {
                     </div>
                 </main>
             </div>
+
+            {/* Confirmation Dialog */}
+            <ConfirmDialog
+                open={showConfirm}
+                onOpenChange={setShowConfirm}
+                title="Confirm Loan Application"
+                description={`You are about to submit a loan application for Rs. ${parseFloat(formData.amount || '0').toLocaleString('en-IN')} for ${formData.tenure_months || 0} months. This will be reviewed by our team. Do you want to proceed?`}
+                confirmText="Submit Application"
+                cancelText="Review Details"
+                variant="info"
+                onConfirm={handleConfirmedSubmit}
+            />
         </div>
     );
 }

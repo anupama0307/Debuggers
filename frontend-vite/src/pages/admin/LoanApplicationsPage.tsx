@@ -4,7 +4,8 @@ import Sidebar from '@/components/common/Sidebar';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ClipboardList, CheckCircle, XCircle, AlertCircle, User, Calendar, Target } from 'lucide-react';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
+import { ClipboardList, CheckCircle, XCircle, AlertCircle, User } from 'lucide-react';
 import api from '@/services/api';
 
 interface Loan {
@@ -27,6 +28,7 @@ export default function LoanApplicationsPage() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
     const [error, setError] = useState('');
+    const [confirmAction, setConfirmAction] = useState<{ loanId: string; action: 'APPROVED' | 'REJECTED'; name: string; amount: number } | null>(null);
 
     useEffect(() => { fetchLoans(); }, []);
 
@@ -38,7 +40,8 @@ export default function LoanApplicationsPage() {
             setLoans(Array.isArray(loansData) ? loansData : []);
         } catch (err: any) {
             if (err.response?.status === 403) setError('Access denied. Admin privileges required.');
-            else setError(err.response?.data?.detail || 'Failed to load loans');
+            else if (err.response?.status === 401) setError('Session expired. Please login again.');
+            else setError(err.response?.data?.detail || 'Failed to load loans. Please try again.');
             setLoans([]);
         } finally {
             setLoading(false);
@@ -51,6 +54,7 @@ export default function LoanApplicationsPage() {
 
     const handleStatusUpdate = async (loanId: string, newStatus: string) => {
         try {
+            setError('');
             await api.patch(`/admin/loans/${loanId}/status`, {
                 loan_id: loanId,
                 status: newStatus.toUpperCase(),
@@ -58,7 +62,29 @@ export default function LoanApplicationsPage() {
             });
             fetchLoans();
         } catch (err: any) {
-            setError(err.response?.data?.detail || 'Failed to update');
+            if (err.response?.status === 404) {
+                setError('Loan not found. It may have been deleted.');
+            } else if (err.response?.status === 400) {
+                setError('Invalid request. The loan may already be processed.');
+            } else {
+                setError(err.response?.data?.detail || 'Failed to update loan status. Please try again.');
+            }
+        }
+    };
+
+    const onActionClick = (loan: Loan, action: 'APPROVED' | 'REJECTED') => {
+        setConfirmAction({
+            loanId: loan.id,
+            action,
+            name: loan.user_name || loan.full_name || 'Unknown',
+            amount: loan.amount || loan.loan_amount || 0
+        });
+    };
+
+    const handleConfirmedAction = () => {
+        if (confirmAction) {
+            handleStatusUpdate(confirmAction.loanId, confirmAction.action);
+            setConfirmAction(null);
         }
     };
 
@@ -178,7 +204,7 @@ export default function LoanApplicationsPage() {
                                                                     size="sm"
                                                                     variant="ghost"
                                                                     className="h-9 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 gap-1"
-                                                                    onClick={() => handleStatusUpdate(loan.id, 'APPROVED')}
+                                                                    onClick={() => onActionClick(loan, 'APPROVED')}
                                                                 >
                                                                     <CheckCircle className="w-4 h-4" /> Approve
                                                                 </Button>
@@ -186,7 +212,7 @@ export default function LoanApplicationsPage() {
                                                                     size="sm"
                                                                     variant="ghost"
                                                                     className="h-9 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 gap-1"
-                                                                    onClick={() => handleStatusUpdate(loan.id, 'REJECTED')}
+                                                                    onClick={() => onActionClick(loan, 'REJECTED')}
                                                                 >
                                                                     <XCircle className="w-4 h-4" /> Reject
                                                                 </Button>
@@ -205,6 +231,22 @@ export default function LoanApplicationsPage() {
                     )}
                 </main>
             </div>
+
+            {/* Confirmation Dialog for Approve/Reject */}
+            <ConfirmDialog
+                open={!!confirmAction}
+                onOpenChange={(open) => !open && setConfirmAction(null)}
+                title={confirmAction?.action === 'APPROVED' ? 'Approve Loan Application' : 'Reject Loan Application'}
+                description={
+                    confirmAction?.action === 'APPROVED'
+                        ? `Are you sure you want to approve the loan of ₹${confirmAction.amount.toLocaleString('en-IN')} for ${confirmAction.name}? This action cannot be undone.`
+                        : `Are you sure you want to reject the loan of ₹${confirmAction?.amount.toLocaleString('en-IN')} for ${confirmAction?.name}? The applicant will be notified.`
+                }
+                confirmText={confirmAction?.action === 'APPROVED' ? 'Approve Loan' : 'Reject Loan'}
+                cancelText="Cancel"
+                variant={confirmAction?.action === 'APPROVED' ? 'info' : 'danger'}
+                onConfirm={handleConfirmedAction}
+            />
         </div>
     );
 }

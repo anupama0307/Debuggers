@@ -335,9 +335,61 @@ def parse_bank_statement(file_content: bytes) -> List[Dict[str, Any]]:
 
 
 # ============ Audio Transcription ============
+def _convert_audio_to_wav(file_content: bytes, source_format: str) -> tuple[bytes, str]:
+    """
+    Convert audio to WAV format for Gemini compatibility.
+    
+    Args:
+        file_content: Raw audio file bytes
+        source_format: Source format (e.g., 'webm', 'ogg', 'm4a')
+        
+    Returns:
+        Tuple of (converted_bytes, mime_type)
+    """
+    try:
+        from pydub import AudioSegment
+        import tempfile
+        import os
+        
+        # Create temp files for conversion
+        with tempfile.NamedTemporaryFile(suffix=f'.{source_format}', delete=False) as src_file:
+            src_file.write(file_content)
+            src_path = src_file.name
+        
+        try:
+            # Load audio using pydub (requires ffmpeg)
+            audio = AudioSegment.from_file(src_path, format=source_format)
+            
+            # Export as WAV
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as dst_file:
+                dst_path = dst_file.name
+            
+            audio.export(dst_path, format='wav')
+            
+            with open(dst_path, 'rb') as f:
+                wav_content = f.read()
+            
+            # Cleanup temp files
+            os.unlink(dst_path)
+            
+            return wav_content, 'audio/wav'
+            
+        finally:
+            # Always cleanup source temp file
+            if os.path.exists(src_path):
+                os.unlink(src_path)
+                
+    except ImportError:
+        raise ValueError("pydub not installed. Run: pip install pydub")
+    except Exception as e:
+        raise ValueError(f"Audio conversion failed: {str(e)}. Ensure ffmpeg is installed.")
+
+
 async def transcribe_audio(file_content: bytes, mime_type: str) -> str:
     """
     Transcribe audio file to text using Gemini 1.5 Flash.
+    
+    Automatically converts WebM/OGG audio to WAV for Gemini compatibility.
     
     Args:
         file_content: Raw audio file bytes
@@ -357,7 +409,21 @@ async def transcribe_audio(file_content: bytes, mime_type: str) -> str:
     if len(file_content) == 0:
         raise ValueError("Audio file is empty")
     
+    # Formats that need conversion (not natively supported by Gemini)
+    formats_needing_conversion = {
+        'audio/webm': 'webm',
+        'audio/ogg': 'ogg',
+        'audio/x-m4a': 'm4a',
+        'audio/m4a': 'm4a',
+    }
+    
     try:
+        # Convert unsupported formats to WAV
+        if mime_type in formats_needing_conversion:
+            source_format = formats_needing_conversion[mime_type]
+            print(f"[TRANSCRIBE] Converting {mime_type} to WAV for Gemini compatibility")
+            file_content, mime_type = _convert_audio_to_wav(file_content, source_format)
+        
         # Encode audio to base64 for Gemini
         audio_base64 = base64.b64encode(file_content).decode('utf-8')
         
@@ -391,4 +457,3 @@ async def transcribe_audio(file_content: bytes, mime_type: str) -> str:
         if "unsupported" in error_msg.lower() or "invalid" in error_msg.lower():
             raise ValueError(f"Audio format not supported by Gemini. Try WAV or MP3.")
         raise ValueError(f"Error transcribing audio: {error_msg}")
-
